@@ -9,11 +9,10 @@
 #include <usbcfg.h>
 #include <main.h>
 #include <motors.h>
-#include <camera/po8030.h>
 #include <chprintf.h>
-
-#include <pi_regulator.h>
-#include <process_image.h>
+#include <messagebus.h>
+#include <i2c_bus.h>
+#include <imu.h>
 
 void SendUint8ToComputer(uint8_t* data, uint16_t size) 
 {
@@ -40,27 +39,52 @@ int main(void)
     halInit();
     chSysInit();
     mpu_init();
+    i2c_start();
+
+    /** Inits the Inter Process Communication bus. */
+    messagebus_init(&bus, &bus_lock, &bus_condvar);
 
     //starts the serial communication
     serial_start();
+
     //start the USB communication
     usb_start();
+
+    //inits the motors
+    motors_init();
+
+    //inits the imu
+    imu_start();
+
+    /*
     //starts the camera
     dcmi_start();
 	po8030_start();
-	//inits the motors
-	motors_init();
+	*/
 
+	/*
 	//stars the threads for the pi regulator and the processing of the image
 	pi_regulator_start();
 	process_image_start();
 
-    /* Infinite loop. */
+    Infinite loop.
     while (1) {
     	//waits 1 second
         chThdSleepMilliseconds(1000);
+     */
     }
 }
+
+void moveTowardsUp(void){
+	float treshold = 0.2;
+	int16_t position;
+
+	get_acc_all(position);
+	for(int i=0, i < 3, i++){
+
+	}
+}
+
 
 #define STACK_CHK_GUARD 0xe2dee396
 uintptr_t __stack_chk_guard = STACK_CHK_GUARD;
