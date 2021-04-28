@@ -106,10 +106,10 @@ void moveTowardsUp(void){
 	float acc_y;
 	acc_x = get_acceleration(0);
 	acc_y = get_acceleration(1);
-	bool acc_x_pos;
-	bool acc_x_neg;
-	bool acc_y_pos;
-	bool acc_y_neg;
+	bool acc_x_pos = false;
+	bool acc_x_neg = false;
+	bool acc_y_pos = false;
+	bool acc_y_neg = false;
 
 	if(acc_x > treshold) {
 		acc_x_pos = true;
@@ -123,7 +123,7 @@ void moveTowardsUp(void){
 		acc_y_neg = true;
 	}
 
-	if(acc_y_pos || acc_y_neg) {
+	if(acc_y_pos || acc_y_neg || acc_x_pos || acc_x_neg) {
 		if(acc_x_pos) {
 			//Tourne à droite
 		} else if(acc_x_neg) {
@@ -134,7 +134,7 @@ void moveTowardsUp(void){
 			//Demi-tour
 		}
 	} else {
-		//Arrête tout
+		//Ne bouge pas
 	}
 }
 
