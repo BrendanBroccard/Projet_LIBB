@@ -10,9 +10,9 @@
 #include <main.h>
 #include <motors.h>
 #include <chprintf.h>
-#include <messagebus.h>
+//#include <messagebus.h>
 #include <i2c_bus.h>
-#include <imu.h>
+//#include <imu.h>
 
 void SendUint8ToComputer(uint8_t* data, uint16_t size) 
 {
@@ -57,7 +57,7 @@ int main(void)
     mpu_init();
 
     /** Inits the Inter Process Communication bus. */
-    messagebus_init(&bus, &bus_lock, &bus_condvar);
+    //messagebus_init(&bus, &bus_lock, &bus_condvar);
 
     //starts the timer 11
     timer11_start();
@@ -75,7 +75,7 @@ int main(void)
     motors_init();
 
     //inits the imu
-    imu_start();
+    //imu_start();
 
     while(1) {
 
