@@ -10,9 +10,7 @@
 #include <main.h>
 #include <motors.h>
 #include <chprintf.h>
-//#include <messagebus.h>
 #include <i2c_bus.h>
-//#include <imu.h>
 
 void SendUint8ToComputer(uint8_t* data, uint16_t size) 
 {
@@ -80,32 +78,14 @@ int main(void)
     while(1) {
 
     }
-
-    /*
-    //starts the camera
-    dcmi_start();
-	po8030_start();
-	*/
-
-	/*
-	//stars the threads for the pi regulator and the processing of the image
-	pi_regulator_start();
-	process_image_start();
-
-    Infinite loop.
-    while (1) {
-    	//waits 1 second
-        chThdSleepMilliseconds(1000);
-
-    } */
 }
 
 void moveTowardsUp(void){
 	float treshold = 0.2;
-	float acc_x;
-	float acc_y;
-	acc_x = get_acceleration(0);
-	acc_y = get_acceleration(1);
+	float acc_x = 0;
+	float acc_y = 0;
+	//acc_x = get_acceleration(0);
+	//acc_y = get_acceleration(1);
 	bool acc_x_pos = false;
 	bool acc_x_neg = false;
 	bool acc_y_pos = false;
