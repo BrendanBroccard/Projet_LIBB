@@ -33,28 +33,53 @@ static void serial_start(void)
 	sdStart(&SD3, &ser_cfg); // UART3.
 }
 
+static void timer11_start(void){
+    //General Purpose Timer configuration
+    //timer 11 is a 16 bit timer so we can measure time
+    //to about 65ms with a 1Mhz counter
+    static const GPTConfig gpt11cfg = {
+        1000000,        /* 1MHz timer clock in order to measure uS.*/
+        NULL,           /* Timer callback.*/
+        0,
+        0
+    };
+
+    gptStart(&GPTD11, &gpt11cfg);
+    //let the timer count to max value
+    gptStartContinuous(&GPTD11, 0xFFFF);
+}
+
 int main(void)
 {
 
     halInit();
     chSysInit();
     mpu_init();
-    i2c_start();
 
     /** Inits the Inter Process Communication bus. */
     messagebus_init(&bus, &bus_lock, &bus_condvar);
 
+    //starts the timer 11
+    timer11_start();
+
     //starts the serial communication
     serial_start();
 
-    //start the USB communication
+    //starts the USB communication
     usb_start();
+
+    //starts the i2c communication
+    i2c_start();
 
     //inits the motors
     motors_init();
 
     //inits the imu
     imu_start();
+
+    while(1) {
+
+    }
 
     /*
     //starts the camera
@@ -71,17 +96,45 @@ int main(void)
     while (1) {
     	//waits 1 second
         chThdSleepMilliseconds(1000);
-     */
-    }
+
+    } */
 }
 
 void moveTowardsUp(void){
 	float treshold = 0.2;
-	int16_t position;
+	float acc_x;
+	float acc_y;
+	acc_x = get_acceleration(0);
+	acc_y = get_acceleration(1);
+	bool acc_x_pos;
+	bool acc_x_neg;
+	bool acc_y_pos;
+	bool acc_y_neg;
 
-	get_acc_all(position);
-	for(int i=0, i < 3, i++){
+	if(acc_x > treshold) {
+		acc_x_pos = true;
+	} else if(acc_x < -treshold) {
+		acc_x_neg = true;
+	}
 
+	if(acc_y > treshold) {
+		acc_y_pos = true;
+	} else if(acc_y < -treshold) {
+		acc_y_neg = true;
+	}
+
+	if(acc_y_pos || acc_y_neg) {
+		if(acc_x_pos) {
+			//Tourne à droite
+		} else if(acc_x_neg) {
+			//Tourne à gauche
+		} else if(acc_y_pos) {
+			//Va tout droit
+		} else if(acc_y_neg) {
+			//Demi-tour
+		}
+	} else {
+		//Arrête tout
 	}
 }
 
