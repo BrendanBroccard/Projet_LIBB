@@ -11,13 +11,20 @@
 #include <motors.h>
 #include <chprintf.h>
 #include <i2c_bus.h>
+#include "sensors/imu.h"
 
+messagebus_t bus;
+MUTEX_DECL(bus_lock); // @suppress("Field cannot be resolved")
+CONDVAR_DECL(bus_condvar);
+
+/*
 void SendUint8ToComputer(uint8_t* data, uint16_t size) 
 {
 	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)"START", 5);
 	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)&size, sizeof(uint16_t));
 	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)data, size);
 }
+*/
 
 static void serial_start(void)
 {
@@ -47,15 +54,15 @@ static void timer11_start(void){
     gptStartContinuous(&GPTD11, 0xFFFF);
 }
 
+
+//Initier les THREAD
+
 int main(void)
 {
 
     halInit();
     chSysInit();
     mpu_init();
-
-    /** Inits the Inter Process Communication bus. */
-    //messagebus_init(&bus, &bus_lock, &bus_condvar);
 
     //starts the timer 11
     timer11_start();
@@ -73,19 +80,28 @@ int main(void)
     motors_init();
 
     //inits the imu
-    //imu_start();
+    imu_start();
+
+    /** Inits the Inter Process Communication bus. */
+    messagebus_init(&bus, &bus_lock, &bus_condvar);
+
+    messagebus_topic_t *imu_topic = messagebus_find_topic_blocking(&bus, "/imu");
+    imu_msg_t imu_values;
 
     while(1) {
+        messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
+        moveTowardsUp();
 
+        chThdSleepMilliseconds(100);
     }
 }
 
-void moveTowardsUp(void){
+void moveTowardsUp(void) {
 	float treshold = 0.2;
 	float acc_x = 0;
 	float acc_y = 0;
-	//acc_x = get_acceleration(0);
-	//acc_y = get_acceleration(1);
+	acc_x = get_acceleration(0);
+	acc_y = get_acceleration(1);
 	bool acc_x_pos = false;
 	bool acc_x_neg = false;
 	bool acc_y_pos = false;
@@ -102,6 +118,8 @@ void moveTowardsUp(void){
 	} else if(acc_y < -treshold) {
 		acc_y_neg = true;
 	}
+
+	//chprintf((BaseSequentialStream *)&SDU1, "%4d,", acc_x);
 
 	if(acc_y_pos || acc_y_neg || acc_x_pos || acc_x_neg) {
 		if(acc_x_pos) {
