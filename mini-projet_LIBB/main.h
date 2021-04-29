@@ -22,6 +22,8 @@ extern "C" {
 #define KP						800.0f
 #define KI 						3.5f	//must not be zero
 #define MAX_SUM_ERROR 			(MOTOR_SPEED_LIMIT/KI)
+//#define NB_AXIS					3
+#define NB_SAMPLES_OFFSET     	200
 
 /** Robot wide IPC bus. */
 extern messagebus_t bus;
@@ -29,6 +31,7 @@ extern messagebus_t bus;
 extern parameter_namespace_t parameter_root;
 
 //void SendUint8ToComputer(uint8_t* data, uint16_t size);
+//void imu_compute_offset(messagebus_topic_t * imu_topic, uint16_t nb_samples);
 void moveTowardsUp(void);
 
 #ifdef __cplusplus

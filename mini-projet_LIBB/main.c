@@ -74,7 +74,7 @@ int main(void)
     usb_start();
 
     //starts the i2c communication
-    i2c_start();
+    //i2c_start(); <-- déjà inclu dans imu_start()
 
     //inits the motors
     motors_init();
@@ -100,8 +100,9 @@ void moveTowardsUp(void) {
 	float treshold = 0.2;
 	float acc_x = 0;
 	float acc_y = 0;
-	acc_x = get_acceleration(0);
-	acc_y = get_acceleration(1);
+	calibrate_acc();
+	acc_x = get_acc_filtered(0, NB_SAMPLES_OFFSET);
+	acc_y = get_acc_filtered(1, NB_SAMPLES_OFFSET);
 	bool acc_x_pos = false;
 	bool acc_x_neg = false;
 	bool acc_y_pos = false;
@@ -119,7 +120,8 @@ void moveTowardsUp(void) {
 		acc_y_neg = true;
 	}
 
-	//chprintf((BaseSequentialStream *)&SDU1, "%4d,", acc_x);
+	chprintf((BaseSequentialStream *)&SDU1, "%4d, <-- acc_x", acc_x);
+	chprintf((BaseSequentialStream *)&SDU1, "%4d, <-- acc_y", acc_y);
 
 	if(acc_y_pos || acc_y_neg || acc_x_pos || acc_x_neg) {
 		if(acc_x_pos) {
