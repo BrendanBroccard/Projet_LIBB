@@ -20,8 +20,6 @@ messagebus_t bus;
 MUTEX_DECL(bus_lock); // @suppress("Field cannot be resolved")
 CONDVAR_DECL(bus_condvar);
 
-//static imu_msg_t imu_values;
-
 /*
 void SendUint8ToComputer(uint8_t* data, uint16_t size) 
 {
@@ -87,24 +85,24 @@ int main(void)
     //inits the imu
     imu_start();
 
+    //inits the proximity sensors
     proximity_start();
 
     /** Inits the Inter Process Communication bus. */
     messagebus_init(&bus, &bus_lock, &bus_condvar);
 
-
-    //messagebus_topic_t *imu_topic = messagebus_find_topic_blocking(&bus, "/imu");
-    //imu_msg_t imu_values;
-
-    //calibrate_ir();
-    //calibrate_acc();
-    //calibrate_gyro();
+    bool obstacle = false;
 
     while(1) {
-        //messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
-        //moveTowardsUp();
-    	quart_de_tour_right();
-    	quart_de_tour_left();
+    	go_forward();
+    	obstacle = obstacle_detection(CAPTEUR_IR_FRONT);
+    	if(obstacle) {
+    		//stop_motor();
+    		quart_de_tour_right();
+    		obstacle = 0;
+    	}
+    	//quart_de_tour_right();
+    	//quart_de_tour_left();
         chThdSleepMilliseconds(100);
     }
 }
@@ -112,6 +110,7 @@ int main(void)
 void moveTowardsUp(void) {
 //	chSysLock();
 //	GPTD11.tim->CNT = 0;
+    //messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
 
 	calibrate_acc();
 	chThdSleepMilliseconds(1000); //take the time to calibrate
@@ -162,42 +161,22 @@ void moveTowardsUp(void) {
 
 }
 
-void obstacle(void) {
+bool obstacle_detection(int capteur) {
+	bool obs = false;
+
 	messagebus_topic_t *prox_topic = messagebus_find_topic_blocking(&bus, "/proximity");
 	proximity_msg_t prox_values;
-	int16_t leftSpeed = 0, rightSpeed = 0;
+	//int16_t leftSpeed = 0, rightSpeed = 0;
 
 	calibrate_ir();
 	messagebus_topic_wait(prox_topic, &prox_values, sizeof(prox_values));
-	int front_capteur = get_calibrated_prox(CAPTEUR_IR_FRONT);
-	bool obstacle = false;
-
-	//le capteur reçoit la présence d'un obstacle
+	int front_capteur = get_calibrated_prox(capteur);
 
 	if (front_capteur > OBSTACLE) {
-		obstacle = true;
-		quart_de_tour_right();
-		go_forward();
+		obs = true;
 	}
 
-	//le capteur contourne l'obstacle
-
-	while (obstacle) {
-
-		calibrate_ir();
-		messagebus_topic_wait(prox_topic, &prox_values, sizeof(prox_values));
-		int left_capteur = get_calibrated_prox(CAPTEUR_IR_LEFT);
-		int leftback_capteur = get_calibrated_prox(CAPTEUR_IR_BACKLEFT);
-		if(left_capteur < OBSTACLE && leftback_capteur < OBSTACLE) {
-			quart_de_tour_left();
-			obstacle = false;
-		} else {
-
-		}
-	}
-
-	obstacle = RESET_VALUE;
-
+	return obs;
 }
 
 void turn_right() {

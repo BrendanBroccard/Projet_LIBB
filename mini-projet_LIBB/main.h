@@ -24,7 +24,7 @@ extern "C" {
 #define MAX_SUM_ERROR 			(MOTOR_SPEED_LIMIT/KI)
 #define RESET_VALUE 			0
 #define MAX_SPEED 				200
-#define OBSTACLE 				1000
+#define OBSTACLE 				100
 #define QUART_TOUR  			340 //nombre de step qu'il prend pour faire un quart de tour
 #define CAPTEUR_IR_FRONT 		0
 #define CAPTEUR_IR_LEFT 		5
@@ -39,7 +39,7 @@ extern parameter_namespace_t parameter_root;
 //void SendUint8ToComputer(uint8_t* data, uint16_t size);
 //void imu_compute_offset(messagebus_topic_t * imu_topic, uint16_t nb_samples);
 void moveTowardsUp(void);
-void obstacle(void);
+bool obstacle_detection(int capteur);
 void turn_right(void);
 void turn_left(void);
 void quart_de_tour_right(void);
