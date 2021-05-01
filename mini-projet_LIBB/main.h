@@ -22,8 +22,14 @@ extern "C" {
 #define KP						800.0f
 #define KI 						3.5f	//must not be zero
 #define MAX_SUM_ERROR 			(MOTOR_SPEED_LIMIT/KI)
-//#define NB_AXIS					3
-#define NB_SAMPLES_OFFSET     	200
+#define RESET_VALUE 			0
+#define MAX_SPEED 				200
+#define OBSTACLE 				1000
+#define QUART_TOUR  			340 //nombre de step qu'il prend pour faire un quart de tour
+#define CAPTEUR_IR_FRONT 		0
+#define CAPTEUR_IR_LEFT 		5
+#define CAPTEUR_IR_BACKLEFT 	4
+
 
 /** Robot wide IPC bus. */
 extern messagebus_t bus;
@@ -33,6 +39,13 @@ extern parameter_namespace_t parameter_root;
 //void SendUint8ToComputer(uint8_t* data, uint16_t size);
 //void imu_compute_offset(messagebus_topic_t * imu_topic, uint16_t nb_samples);
 void moveTowardsUp(void);
+void obstacle(void);
+void turn_right(void);
+void turn_left(void);
+void quart_de_tour_right(void);
+void quart_de_tour_left(void);
+void go_forward(void);
+void stop_motors(void);
 
 #ifdef __cplusplus
 }
