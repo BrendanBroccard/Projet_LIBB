@@ -22,13 +22,18 @@ extern "C" {
 #define KP						800.0f
 #define KI 						3.5f	//must not be zero
 #define MAX_SUM_ERROR 			(MOTOR_SPEED_LIMIT/KI)
+
 #define RESET_VALUE 			0
 #define MAX_SPEED 				200
-#define OBSTACLE 				100
-#define QUART_TOUR  			340 //nombre de step qu'il prend pour faire un quart de tour
-#define CAPTEUR_IR_FRONT 		0
+#define OBSTACLE 				10
+#define QUART_TOUR  			300 //nombre de step qu'il prend pour faire un quart de tour
+#define CAPTEUR_IR_FRONTRIGHT 	0
+#define CAPTEUR_IR_FRONTLEFT	7
+#define CAPTEUR_IR_RIGHT		2
 #define CAPTEUR_IR_LEFT 		5
+#define CAPTEUR_IR_RIGHTBACK	3
 #define CAPTEUR_IR_BACKLEFT 	4
+#define DODGE_OBSTACLE			300
 
 
 /** Robot wide IPC bus. */
@@ -44,6 +49,7 @@ void turn_right(void);
 void turn_left(void);
 void quart_de_tour_right(void);
 void quart_de_tour_left(void);
+void demi_tour(void);
 void go_forward(void);
 void stop_motors(void);
 

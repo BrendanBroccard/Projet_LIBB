@@ -62,64 +62,54 @@ static void timer11_start(void){
 
 int main(void)
 {
-
     halInit();
     chSysInit();
     mpu_init();
 
-    //starts the timer 11
-    timer11_start();
-
-    //starts the serial communication
-    serial_start();
-
-    //starts the USB communication
-    usb_start();
-
-    //starts the i2c communication
-    i2c_start(); //<-- déjà inclu dans imu_start()
-
-    //inits the motors
-    motors_init();
-
-    //inits the imu
-    imu_start();
-
-    //inits the proximity sensors
-    proximity_start();
+    timer11_start();		//starts the timer 11
+    serial_start();			//starts the serial communication
+    usb_start();			//starts the USB communication
+    motors_init();			//inits the motors
+    imu_start();			//inits the imu and the i2c communication
+    proximity_start();		//inits the proximity sensors
 
     /** Inits the Inter Process Communication bus. */
     messagebus_init(&bus, &bus_lock, &bus_condvar);
 
-    bool obstacle = false;
+    bool obstacle_left = false;
+    bool obstacle_right = false;
 
     while(1) {
+    	/*
     	go_forward();
-    	obstacle = obstacle_detection(CAPTEUR_IR_FRONT);
-    	if(obstacle) {
-    		//stop_motor();
-    		quart_de_tour_right();
-    		obstacle = 0;
+
+    	obstacle_right = obstacle_detection(CAPTEUR_IR_FRONTRIGHT);
+    	//obstacle_left = obstacle_detection(CAPTEUR_IR_FRONTLEFT);
+    	if(obstacle_right) {
+    		dodge_left();
+    		obstacle_right = false;
     	}
-    	//quart_de_tour_right();
-    	//quart_de_tour_left();
+
+    	if(obstacle_left) {
+
+    	}
+		*/
+    	moveTowardsUp();
         chThdSleepMilliseconds(100);
     }
 }
 
 void moveTowardsUp(void) {
-//	chSysLock();
-//	GPTD11.tim->CNT = 0;
-    //messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
 
-	calibrate_acc();
-	chThdSleepMilliseconds(1000); //take the time to calibrate
+	messagebus_topic_t *imu_topic = messagebus_find_topic_blocking(&bus, "/imu");
+	imu_msg_t imu_values;
 
 	float treshold = 0.2;
-
 	float acc_x = 0;
 	float acc_y = 0;
 
+	calibrate_acc();
+	messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
 	acc_x = get_acceleration(0);
 	acc_y = get_acceleration(1);
 	bool acc_x_pos = false;
@@ -139,26 +129,19 @@ void moveTowardsUp(void) {
 		acc_y_neg = true;
 	}
 
-	chprintf((BaseSequentialStream *)&SDU1, "%4d, <-- acc_x", acc_x);
-	chprintf((BaseSequentialStream *)&SDU1, "%4d, <-- acc_y", acc_y);
-
 	if(acc_y_pos || acc_y_neg || acc_x_pos || acc_x_neg) {
 		if(acc_x_pos) {
-			//Tourne à droite
+			turn_right();
 		} else if(acc_x_neg) {
-			//Tourne à gauche
+			turn_left();
 		} else if(acc_y_pos) {
-			//Va tout droit
+			go_forward();
 		} else if(acc_y_neg) {
-			//Demi-tour
+			demi_tour();
 		}
 	} else {
-		//Ne bouge pas
+		stop_motors();
 	}
-
-//	time = GPTD11.tim->CNT;
-//	chSysUnlock();
-
 }
 
 bool obstacle_detection(int capteur) {
@@ -170,13 +153,27 @@ bool obstacle_detection(int capteur) {
 
 	calibrate_ir();
 	messagebus_topic_wait(prox_topic, &prox_values, sizeof(prox_values));
-	int front_capteur = get_calibrated_prox(capteur);
 
-	if (front_capteur > OBSTACLE) {
+	if (get_calibrated_prox(capteur) > OBSTACLE) {
 		obs = true;
 	}
 
 	return obs;
+}
+
+void dodge_left() {
+	quart_de_tour_left();
+	bool obs_right = true;
+	while(obs_right) {
+		obs_right = obstacle_detection(CAPTEUR_IR_RIGHT);
+	}
+	right_motor_set_pos(RESET_VALUE);
+	go_forward();
+	while(abs(right_motor_get_pos()) < DODGE_OBSTACLE)  {		//Avance un coup pour esquiver le coin de l'obstacle
+	}
+	stop_motors();
+	right_motor_set_pos(RESET_VALUE);
+	quart_de_tour_right();
 }
 
 void turn_right() {
@@ -193,7 +190,6 @@ void quart_de_tour_right(void) {
 	right_motor_set_pos(RESET_VALUE);
 	turn_right();
 	while(abs(right_motor_get_pos()) < QUART_TOUR)  {
-
 	}
 	left_motor_set_speed(RESET_VALUE);
 	right_motor_set_speed(RESET_VALUE);
@@ -210,6 +206,16 @@ void quart_de_tour_left(void) {
 	left_motor_set_speed(RESET_VALUE);
 	right_motor_set_speed(RESET_VALUE);
 	left_motor_set_pos(RESET_VALUE);
+}
+
+void demi_tour(void) {
+	right_motor_set_pos(RESET_VALUE);
+	turn_right();
+	while(abs(right_motor_get_pos()) < 2*QUART_TOUR)  {
+	}
+	left_motor_set_speed(RESET_VALUE);
+	right_motor_set_speed(RESET_VALUE);
+	right_motor_set_pos(RESET_VALUE);
 }
 
 void go_forward(void) {
