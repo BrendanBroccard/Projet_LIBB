@@ -24,7 +24,7 @@ extern "C" {
 #define MAX_SUM_ERROR 			(MOTOR_SPEED_LIMIT/KI)
 
 #define RESET_VALUE 			0
-#define MAX_SPEED 				100
+#define MAX_SPEED 				200
 #define OBSTACLE 				50
 #define SIDE_OBSTACLE			5
 #define QUART_TOUR  			320 //nombre de step qu'il prend pour faire un quart de tour
