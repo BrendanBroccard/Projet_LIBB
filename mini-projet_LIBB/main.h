@@ -25,15 +25,17 @@ extern "C" {
 
 #define RESET_VALUE 			0
 #define MAX_SPEED 				200
-#define OBSTACLE 				10
-#define QUART_TOUR  			300 //nombre de step qu'il prend pour faire un quart de tour
+#define OBSTACLE 				50
+#define SIDE_OBSTACLE			5
+#define QUART_TOUR  			320 //nombre de step qu'il prend pour faire un quart de tour
 #define CAPTEUR_IR_FRONTRIGHT 	0
 #define CAPTEUR_IR_FRONTLEFT	7
 #define CAPTEUR_IR_RIGHT		2
 #define CAPTEUR_IR_LEFT 		5
 #define CAPTEUR_IR_RIGHTBACK	3
 #define CAPTEUR_IR_BACKLEFT 	4
-#define DODGE_OBSTACLE			300
+#define DODGE_OBSTACLE			400
+#define TRESHOLD				0.2
 
 
 /** Robot wide IPC bus. */
@@ -44,7 +46,9 @@ extern parameter_namespace_t parameter_root;
 //void SendUint8ToComputer(uint8_t* data, uint16_t size);
 //void imu_compute_offset(messagebus_topic_t * imu_topic, uint16_t nb_samples);
 void moveTowardsUp(void);
-bool obstacle_detection(int capteur);
+bool obstacle_detection(int capteur, int trigger);
+void dodge_right();
+void dodge_left();
 void turn_right(void);
 void turn_left(void);
 void quart_de_tour_right(void);

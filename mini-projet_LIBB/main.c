@@ -80,22 +80,21 @@ int main(void)
     bool obstacle_right = false;
 
     while(1) {
-    	/*
+
     	go_forward();
 
-    	obstacle_right = obstacle_detection(CAPTEUR_IR_FRONTRIGHT);
-    	//obstacle_left = obstacle_detection(CAPTEUR_IR_FRONTLEFT);
+    	obstacle_right = obstacle_detection(CAPTEUR_IR_FRONTRIGHT, OBSTACLE);
+    	obstacle_left = obstacle_detection(CAPTEUR_IR_FRONTLEFT, OBSTACLE);
     	if(obstacle_right) {
     		dodge_left();
     		obstacle_right = false;
+    	} else if(obstacle_left) {
+    		dodge_right();
+    		obstacle_left = false;
     	}
 
-    	if(obstacle_left) {
-
-    	}
-		*/
-    	moveTowardsUp();
-        chThdSleepMilliseconds(100);
+    	//moveTowardsUp();
+        //chThdSleepMilliseconds(100);
     }
 }
 
@@ -104,14 +103,31 @@ void moveTowardsUp(void) {
 	messagebus_topic_t *imu_topic = messagebus_find_topic_blocking(&bus, "/imu");
 	imu_msg_t imu_values;
 
-	float treshold = 0.2;
+	//float treshold = 0.2;
 	float acc_x = 0;
 	float acc_y = 0;
 
 	calibrate_acc();
 	messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
+
 	acc_x = get_acceleration(0);
 	acc_y = get_acceleration(1);
+
+	if((abs(acc_x) > TRESHOLD) || (abs(acc_y) > TRESHOLD)) {
+		if(acc_x > TRESHOLD) {
+			turn_right();
+		} else if(acc_x < -TRESHOLD) {
+			turn_left();
+		} else if(acc_y > TRESHOLD) {
+			go_forward();
+		} else if(acc_y < -TRESHOLD) {
+			demi_tour();
+		}
+	} else {
+		stop_motors();
+	}
+
+	/*
 	bool acc_x_pos = false;
 	bool acc_x_neg = false;
 	bool acc_y_pos = false;
@@ -142,9 +158,10 @@ void moveTowardsUp(void) {
 	} else {
 		stop_motors();
 	}
+	*/
 }
 
-bool obstacle_detection(int capteur) {
+bool obstacle_detection(int capteur, int trigger) {
 	bool obs = false;
 
 	messagebus_topic_t *prox_topic = messagebus_find_topic_blocking(&bus, "/proximity");
@@ -154,7 +171,7 @@ bool obstacle_detection(int capteur) {
 	calibrate_ir();
 	messagebus_topic_wait(prox_topic, &prox_values, sizeof(prox_values));
 
-	if (get_calibrated_prox(capteur) > OBSTACLE) {
+	if (get_calibrated_prox(capteur) > trigger) {
 		obs = true;
 	}
 
@@ -164,16 +181,31 @@ bool obstacle_detection(int capteur) {
 void dodge_left() {
 	quart_de_tour_left();
 	bool obs_right = true;
+	go_forward();
 	while(obs_right) {
-		obs_right = obstacle_detection(CAPTEUR_IR_RIGHT);
+		obs_right = obstacle_detection(CAPTEUR_IR_RIGHT, SIDE_OBSTACLE);
 	}
 	right_motor_set_pos(RESET_VALUE);
-	go_forward();
-	while(abs(right_motor_get_pos()) < DODGE_OBSTACLE)  {		//Avance un coup pour esquiver le coin de l'obstacle
+	while(abs(right_motor_get_pos()) < DODGE_OBSTACLE)  {		//Avance un dernier coup pour esquiver le coin de l'obstacle
 	}
 	stop_motors();
 	right_motor_set_pos(RESET_VALUE);
 	quart_de_tour_right();
+}
+
+void dodge_right() {
+	quart_de_tour_right();
+	bool obs_left = true;
+	go_forward();
+	while(obs_left) {
+		obs_left = obstacle_detection(CAPTEUR_IR_LEFT, SIDE_OBSTACLE);
+	}
+	right_motor_set_pos(RESET_VALUE);
+	while(abs(right_motor_get_pos()) < DODGE_OBSTACLE)  {		//Avance un dernier coup pour esquiver le coin de l'obstacle
+	}
+	stop_motors();
+	right_motor_set_pos(RESET_VALUE);
+	quart_de_tour_left();
 }
 
 void turn_right() {
