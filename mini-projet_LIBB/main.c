@@ -76,11 +76,13 @@ int main(void)
     /** Inits the Inter Process Communication bus. */
     messagebus_init(&bus, &bus_lock, &bus_condvar);
 
-    bool obstacle_left = false;
-    bool obstacle_right = false;
+    //bool obstacle_left = false;
+    //bool obstacle_right = false;
 
     while(1) {
+    	//calibrate_acc();
 
+    	/*
     	go_forward();
 
     	obstacle_right = obstacle_detection(CAPTEUR_IR_FRONTRIGHT, OBSTACLE);
@@ -92,9 +94,9 @@ int main(void)
     		dodge_right();
     		obstacle_left = false;
     	}
-
-    	//moveTowardsUp();
-        //chThdSleepMilliseconds(100);
+    	*/
+    	moveTowardsUp();
+        //chThdSleepMilliseconds(1000);
     }
 }
 
@@ -103,30 +105,37 @@ void moveTowardsUp(void) {
 	messagebus_topic_t *imu_topic = messagebus_find_topic_blocking(&bus, "/imu");
 	imu_msg_t imu_values;
 
-	//float treshold = 0.2;
-	float acc_x = 0;
-	float acc_y = 0;
+	//float acc_x = 0;
+	//float acc_y = 0;
 
 	calibrate_acc();
 	messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
 
-	acc_x = get_acceleration(0);
-	acc_y = get_acceleration(1);
+	//float acc_x = imu_values.acc_offset[0];
+	//float acc_y = imu_values.acc_offset[1];
 
-	if((abs(acc_x) > TRESHOLD) || (abs(acc_y) > TRESHOLD)) {
-		if(acc_x > TRESHOLD) {
+	//chprintf((BaseSequentialStream *)&SDU1, "acc_x : %4d, ", acc_x);
+	//chprintf((BaseSequentialStream *)&SDU1, "acc_raw : %4d, ", imu_values.acc_raw[0]);
+	//chprintf((BaseSequentialStream *)&SDU1, "acceleration : %4d, ", imu_values.acceleration[0]);
+	//chprintf((BaseSequentialStream *)&SDU1, "acc_offset : %4d, ", imu_values.acc_offset[0]);
+	//chprintf((BaseSequentialStream *)&SDU1, "acc_filtered : %4d, ", imu_values.acc_filtered[0]);
+
+	if((abs(imu_values.acc_offset[0]) > TRESHOLD) || (abs(imu_values.acc_offset[1]) > TRESHOLD)) {
+		if(imu_values.acc_offset[0] > TRESHOLD) {
 			turn_right();
-		} else if(acc_x < -TRESHOLD) {
+		} else if(imu_values.acc_offset[0] < -TRESHOLD) {
 			turn_left();
-		} else if(acc_y > TRESHOLD) {
+		} else if(imu_values.acc_offset[1] > TRESHOLD) {
 			go_forward();
-		} else if(acc_y < -TRESHOLD) {
+		} else if(imu_values.acc_offset[1] < -TRESHOLD) {
 			demi_tour();
 		}
 	} else {
 		stop_motors();
 	}
 
+	//acc_x = RESET_VALUE;
+	//acc_y = RESET_VALUE;
 	/*
 	bool acc_x_pos = false;
 	bool acc_x_neg = false;

@@ -24,7 +24,7 @@ extern "C" {
 #define MAX_SUM_ERROR 			(MOTOR_SPEED_LIMIT/KI)
 
 #define RESET_VALUE 			0
-#define MAX_SPEED 				200
+#define MAX_SPEED 				100
 #define OBSTACLE 				50
 #define SIDE_OBSTACLE			5
 #define QUART_TOUR  			320 //nombre de step qu'il prend pour faire un quart de tour
@@ -35,7 +35,7 @@ extern "C" {
 #define CAPTEUR_IR_RIGHTBACK	3
 #define CAPTEUR_IR_BACKLEFT 	4
 #define DODGE_OBSTACLE			400
-#define TRESHOLD				0.2
+#define TRESHOLD				1000
 
 
 /** Robot wide IPC bus. */
