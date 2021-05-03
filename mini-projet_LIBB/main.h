@@ -44,13 +44,12 @@ extern messagebus_t bus;
 extern parameter_namespace_t parameter_root;
 
 //void SendUint8ToComputer(uint8_t* data, uint16_t size);
-//void imu_compute_offset(messagebus_topic_t * imu_topic, uint16_t nb_samples);
 void moveTowardsUp(void);
 bool obstacle_detection(int capteur, int trigger);
 void dodge_right();
 void dodge_left();
-void turn_right(void);
-void turn_left(void);
+void turn_right(int speed);
+void turn_left(int speed);
 void quart_de_tour_right(void);
 void quart_de_tour_left(void);
 void demi_tour(void);

@@ -76,14 +76,12 @@ int main(void)
     /** Inits the Inter Process Communication bus. */
     messagebus_init(&bus, &bus_lock, &bus_condvar);
 
-    //bool obstacle_left = false;
-    //bool obstacle_right = false;
+    bool obstacle_left = false;
+    bool obstacle_right = false;
 
     while(1) {
-    	//calibrate_acc();
 
-    	/*
-    	go_forward();
+    	moveTowardsUp();
 
     	obstacle_right = obstacle_detection(CAPTEUR_IR_FRONTRIGHT, OBSTACLE);
     	obstacle_left = obstacle_detection(CAPTEUR_IR_FRONTLEFT, OBSTACLE);
@@ -94,8 +92,7 @@ int main(void)
     		dodge_right();
     		obstacle_left = false;
     	}
-    	*/
-    	moveTowardsUp();
+
         //chThdSleepMilliseconds(1000);
     }
 }
@@ -105,26 +102,16 @@ void moveTowardsUp(void) {
 	messagebus_topic_t *imu_topic = messagebus_find_topic_blocking(&bus, "/imu");
 	imu_msg_t imu_values;
 
-	//float acc_x = 0;
-	//float acc_y = 0;
-
 	calibrate_acc();
 	messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
 
-	//float acc_x = imu_values.acc_offset[0];
-	//float acc_y = imu_values.acc_offset[1];
-
 	//chprintf((BaseSequentialStream *)&SDU1, "acc_x : %4d, ", acc_x);
-	//chprintf((BaseSequentialStream *)&SDU1, "acc_raw : %4d, ", imu_values.acc_raw[0]);
-	//chprintf((BaseSequentialStream *)&SDU1, "acceleration : %4d, ", imu_values.acceleration[0]);
-	//chprintf((BaseSequentialStream *)&SDU1, "acc_offset : %4d, ", imu_values.acc_offset[0]);
-	//chprintf((BaseSequentialStream *)&SDU1, "acc_filtered : %4d, ", imu_values.acc_filtered[0]);
 
 	if((abs(imu_values.acc_offset[0]) > TRESHOLD) || (abs(imu_values.acc_offset[1]) > TRESHOLD)) {
 		if(imu_values.acc_offset[0] > TRESHOLD) {
-			turn_right();
+			turn_right(MAX_SPEED/3);
 		} else if(imu_values.acc_offset[0] < -TRESHOLD) {
-			turn_left();
+			turn_left(MAX_SPEED/3);
 		} else if(imu_values.acc_offset[1] > TRESHOLD) {
 			go_forward();
 		} else if(imu_values.acc_offset[1] < -TRESHOLD) {
@@ -133,41 +120,6 @@ void moveTowardsUp(void) {
 	} else {
 		stop_motors();
 	}
-
-	//acc_x = RESET_VALUE;
-	//acc_y = RESET_VALUE;
-	/*
-	bool acc_x_pos = false;
-	bool acc_x_neg = false;
-	bool acc_y_pos = false;
-	bool acc_y_neg = false;
-
-	if(acc_x > treshold) {
-		acc_x_pos = true;
-	} else if(acc_x < -treshold) {
-		acc_x_neg = true;
-	}
-
-	if(acc_y > treshold) {
-		acc_y_pos = true;
-	} else if(acc_y < -treshold) {
-		acc_y_neg = true;
-	}
-
-	if(acc_y_pos || acc_y_neg || acc_x_pos || acc_x_neg) {
-		if(acc_x_pos) {
-			turn_right();
-		} else if(acc_x_neg) {
-			turn_left();
-		} else if(acc_y_pos) {
-			go_forward();
-		} else if(acc_y_neg) {
-			demi_tour();
-		}
-	} else {
-		stop_motors();
-	}
-	*/
 }
 
 bool obstacle_detection(int capteur, int trigger) {
@@ -217,19 +169,19 @@ void dodge_right() {
 	quart_de_tour_left();
 }
 
-void turn_right() {
-	left_motor_set_speed(MAX_SPEED);
-	right_motor_set_speed(- MAX_SPEED);
+void turn_right(int speed) {
+	left_motor_set_speed(speed);
+	right_motor_set_speed(- speed);
 }
 
-void turn_left() {
-	left_motor_set_speed(- MAX_SPEED);
-	right_motor_set_speed(MAX_SPEED);
+void turn_left(int speed) {
+	left_motor_set_speed(- speed);
+	right_motor_set_speed(speed);
 }
 
 void quart_de_tour_right(void) {
 	right_motor_set_pos(RESET_VALUE);
-	turn_right();
+	turn_right(MAX_SPEED);
 	while(abs(right_motor_get_pos()) < QUART_TOUR)  {
 	}
 	left_motor_set_speed(RESET_VALUE);
@@ -239,7 +191,7 @@ void quart_de_tour_right(void) {
 
 void quart_de_tour_left(void) {
 	left_motor_set_pos(RESET_VALUE);
-	turn_left();
+	turn_left(MAX_SPEED);
 	while(abs(left_motor_get_pos()) < QUART_TOUR)  {
 		left_motor_set_speed(- MAX_SPEED);
 		right_motor_set_speed(MAX_SPEED);
@@ -251,7 +203,7 @@ void quart_de_tour_left(void) {
 
 void demi_tour(void) {
 	right_motor_set_pos(RESET_VALUE);
-	turn_right();
+	turn_right(MAX_SPEED);
 	while(abs(right_motor_get_pos()) < 2*QUART_TOUR)  {
 	}
 	left_motor_set_speed(RESET_VALUE);
