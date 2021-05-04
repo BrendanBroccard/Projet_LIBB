@@ -21,6 +21,11 @@ messagebus_t bus;
 MUTEX_DECL(bus_lock); // @suppress("Field cannot be resolved")
 CONDVAR_DECL(bus_condvar);
 
+/*
+static thread_t *sensorsUpdateThd;
+static thread_t *robotControlThd;
+*/
+
 static void serial_start(void)
 {
 	static SerialConfig ser_cfg = {
@@ -65,24 +70,11 @@ int main(void)
     /** Inits the Inter Process Communication bus. */
     messagebus_init(&bus, &bus_lock, &bus_condvar);
 
-    bool obstacle_left = false;
-    bool obstacle_right = false;
+    chThdCreateStatic(sensorsUpdateThd_wa, sizeof(sensorsUpdateThd_wa), NORMALPRIO, sensorsUpdateThd, NULL);
+    chThdCreateStatic(robotControlThd_wa, sizeof(robotControlThd_wa), NORMALPRIO, robotControlThd, NULL);
 
     while(1) {
-
-    	moveTowardsUp();
-
-    	obstacle_right = obstacle_detection(CAPTEUR_IR_FRONTRIGHT, OBSTACLE);
-    	obstacle_left = obstacle_detection(CAPTEUR_IR_FRONTLEFT, OBSTACLE);
-    	if(obstacle_right) {
-    		dodge_left();
-    		obstacle_right = false;
-    	} else if(obstacle_left) {
-    		dodge_right();
-    		obstacle_left = false;
-    	}
-
-        //chThdSleepMilliseconds(100);
+        chThdSleepMilliseconds(1000);
     }
 }
 

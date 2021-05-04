@@ -23,7 +23,6 @@
 #include "i2c_bus.h"
 #include "motors.h"
 #include "sensors/imu.h"
-//#include "sensors/mpu9250.h"
 #include "sensors/proximity.h"
 #include "msgbus/messagebus.h"
 #include "motors.h"
@@ -31,19 +30,63 @@
 #include <deplacement.h>
 #include <controle.h>
 
-//Initier les Thread
+static proximity_msg_t prox_values;
+static imu_msg_t imu_values;
+static bool usingImu;
 
+//Ce thread va utiliser les variables globales, qui sont mises à jour par le second thread,
+//pour dicter au robot ce qu'il doit faire
+static THD_WORKING_AREA(robotControlThd_wa, 2048);
+static THD_FUNCTION(robotControlThd, arg)
+{
+    (void) arg;
+    chRegSetThreadName(__FUNCTION__);
 
+    systime_t time;
+
+    moveTowardsUp();
+
+    bool obstacle_right = false;
+    bool obstacle_left = false;
+    obstacle_right = obstacle_detection(CAPTEUR_IR_FRONTRIGHT, OBSTACLE);
+    obstacle_left = obstacle_detection(CAPTEUR_IR_FRONTLEFT, OBSTACLE);
+    if(obstacle_right) {
+        dodge_left();
+        obstacle_right = false;
+    } else if(obstacle_left) {
+        dodge_right();
+        obstacle_left = false;
+    }
+
+    chThdSleepUntilWindowed(time, time + MS2ST(10));
+}
+
+//Ce thread met à jour les valeurs des variables globales, qui concernent les valeurs mesurées
+//par les capteurs IR et l'IMU
+static THD_WORKING_AREA(sensorsUpdateThd_wa, 2048);
+static THD_FUNCTION(sensorsUpdateThd, arg)
+{
+    (void) arg;
+    chRegSetThreadName(__FUNCTION__);
+
+    systime_t time;
+
+    if(usingImu) {
+    	messagebus_topic_t *imu_topic = messagebus_find_topic_blocking(&bus, "/imu");
+    	calibrate_acc();
+    	messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
+    } else {
+    	messagebus_topic_t *prox_topic = messagebus_find_topic_blocking(&bus, "/proximity");
+    	calibrate_ir();
+    	messagebus_topic_wait(prox_topic, &prox_values, sizeof(prox_values));
+    }
+
+    chThdSleepUntilWindowed(time, time + MS2ST(10));
+}
 
 void moveTowardsUp(void) {
 
-	messagebus_topic_t *imu_topic = messagebus_find_topic_blocking(&bus, "/imu");
-	imu_msg_t imu_values;
-
-	calibrate_acc();
-	messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
-
-	//chprintf((BaseSequentialStream *)&SDU1, "acc_x : %4d, ", acc_x);
+	usingImu = true;
 
 	if((abs(imu_values.acc_offset[0]) > TRESHOLD) || (abs(imu_values.acc_offset[1]) > TRESHOLD)) {
 		if(imu_values.acc_offset[0] > TRESHOLD) {
@@ -58,17 +101,12 @@ void moveTowardsUp(void) {
 	} else {
 		stop_motors();
 	}
+
+	usingImu = false;
 }
 
 bool obstacle_detection(int capteur, int trigger) {
 	bool obs = false;
-
-	messagebus_topic_t *prox_topic = messagebus_find_topic_blocking(&bus, "/proximity");
-	proximity_msg_t prox_values;
-	//int16_t leftSpeed = 0, rightSpeed = 0;
-
-	calibrate_ir();
-	messagebus_topic_wait(prox_topic, &prox_values, sizeof(prox_values));
 
 	if (get_calibrated_prox(capteur) > trigger) {
 		obs = true;
