@@ -23,38 +23,16 @@ extern "C" {
 #define KI 						3.5f	//must not be zero
 #define MAX_SUM_ERROR 			(MOTOR_SPEED_LIMIT/KI)
 
-#define RESET_VALUE 			0
-#define MAX_SPEED 				200
-#define OBSTACLE 				50
-#define SIDE_OBSTACLE			5
-#define QUART_TOUR  			320 //nombre de step qu'il prend pour faire un quart de tour
-#define CAPTEUR_IR_FRONTRIGHT 	0
-#define CAPTEUR_IR_FRONTLEFT	7
-#define CAPTEUR_IR_RIGHT		2
-#define CAPTEUR_IR_LEFT 		5
-#define CAPTEUR_IR_RIGHTBACK	3
-#define CAPTEUR_IR_BACKLEFT 	4
-#define DODGE_OBSTACLE			400
-#define TRESHOLD				1000
-
 
 /** Robot wide IPC bus. */
 extern messagebus_t bus;
 
 extern parameter_namespace_t parameter_root;
 
-//void SendUint8ToComputer(uint8_t* data, uint16_t size);
 void moveTowardsUp(void);
 bool obstacle_detection(int capteur, int trigger);
 void dodge_right();
 void dodge_left();
-void turn_right(int speed);
-void turn_left(int speed);
-void quart_de_tour_right(void);
-void quart_de_tour_left(void);
-void demi_tour(void);
-void go_forward(void);
-void stop_motors(void);
 
 #ifdef __cplusplus
 }

@@ -12,22 +12,15 @@
 #include "i2c_bus.h"
 #include "motors.h"
 #include "sensors/imu.h"
-#include "sensors/mpu9250.h"
+//#include "sensors/mpu9250.h"
 #include "sensors/proximity.h"
 #include "msgbus/messagebus.h"
+#include <deplacement.h>
+#include <controle.h>
 
 messagebus_t bus;
 MUTEX_DECL(bus_lock); // @suppress("Field cannot be resolved")
 CONDVAR_DECL(bus_condvar);
-
-/*
-void SendUint8ToComputer(uint8_t* data, uint16_t size) 
-{
-	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)"START", 5);
-	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)&size, sizeof(uint16_t));
-	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)data, size);
-}
-*/
 
 static void serial_start(void)
 {
@@ -93,7 +86,7 @@ int main(void)
     		obstacle_left = false;
     	}
 
-        //chThdSleepMilliseconds(1000);
+        //chThdSleepMilliseconds(100);
     }
 }
 
@@ -167,58 +160,6 @@ void dodge_right() {
 	stop_motors();
 	right_motor_set_pos(RESET_VALUE);
 	quart_de_tour_left();
-}
-
-void turn_right(int speed) {
-	left_motor_set_speed(speed);
-	right_motor_set_speed(- speed);
-}
-
-void turn_left(int speed) {
-	left_motor_set_speed(- speed);
-	right_motor_set_speed(speed);
-}
-
-void quart_de_tour_right(void) {
-	right_motor_set_pos(RESET_VALUE);
-	turn_right(MAX_SPEED);
-	while(abs(right_motor_get_pos()) < QUART_TOUR)  {
-	}
-	left_motor_set_speed(RESET_VALUE);
-	right_motor_set_speed(RESET_VALUE);
-	right_motor_set_pos(RESET_VALUE);
-}
-
-void quart_de_tour_left(void) {
-	left_motor_set_pos(RESET_VALUE);
-	turn_left(MAX_SPEED);
-	while(abs(left_motor_get_pos()) < QUART_TOUR)  {
-		left_motor_set_speed(- MAX_SPEED);
-		right_motor_set_speed(MAX_SPEED);
-	}
-	left_motor_set_speed(RESET_VALUE);
-	right_motor_set_speed(RESET_VALUE);
-	left_motor_set_pos(RESET_VALUE);
-}
-
-void demi_tour(void) {
-	right_motor_set_pos(RESET_VALUE);
-	turn_right(MAX_SPEED);
-	while(abs(right_motor_get_pos()) < 2*QUART_TOUR)  {
-	}
-	left_motor_set_speed(RESET_VALUE);
-	right_motor_set_speed(RESET_VALUE);
-	right_motor_set_pos(RESET_VALUE);
-}
-
-void go_forward(void) {
-	left_motor_set_speed(MAX_SPEED);
-	right_motor_set_speed(MAX_SPEED);
-}
-
-void stop_motors(void) {
-	left_motor_set_speed(RESET_VALUE);
-	right_motor_set_speed(RESET_VALUE);
 }
 
 #define STACK_CHK_GUARD 0xe2dee396
