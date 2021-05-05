@@ -24,9 +24,10 @@ extern "C" {
 #define DODGE_OBSTACLE			400
 #define TRESHOLD				1000
 
+void initThreads(void);
 void moveTowardsUp(void);
 bool obstacle_detection(int capteur, int trigger);
-void dodge_right();
-void dodge_left();
+void dodge_right(void);
+void dodge_left(void);
 
 #endif /* CONTROLE_H_ */

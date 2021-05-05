@@ -44,6 +44,8 @@ static THD_FUNCTION(robotControlThd, arg)
 
     systime_t time;
 
+    time = chVTGetSystemTime();
+
     moveTowardsUp();
 
     bool obstacle_right = false;
@@ -71,6 +73,8 @@ static THD_FUNCTION(sensorsUpdateThd, arg)
 
     systime_t time;
 
+    time = chVTGetSystemTime();
+
     if(usingImu) {
     	messagebus_topic_t *imu_topic = messagebus_find_topic_blocking(&bus, "/imu");
     	calibrate_acc();
@@ -82,6 +86,11 @@ static THD_FUNCTION(sensorsUpdateThd, arg)
     }
 
     chThdSleepUntilWindowed(time, time + MS2ST(10));
+}
+
+void initThreads(void) {
+	chThdCreateStatic(sensorsUpdateThd_wa, sizeof(sensorsUpdateThd_wa), NORMALPRIO, sensorsUpdateThd, NULL);
+    chThdCreateStatic(robotControlThd_wa, sizeof(robotControlThd_wa), NORMALPRIO, robotControlThd, NULL);
 }
 
 void moveTowardsUp(void) {
@@ -115,7 +124,7 @@ bool obstacle_detection(int capteur, int trigger) {
 	return obs;
 }
 
-void dodge_left() {
+void dodge_left(void) {
 	quart_de_tour_left();
 	bool obs_right = true;
 	go_forward();
@@ -130,7 +139,7 @@ void dodge_left() {
 	quart_de_tour_right();
 }
 
-void dodge_right() {
+void dodge_right(void) {
 	quart_de_tour_right();
 	bool obs_left = true;
 	go_forward();
