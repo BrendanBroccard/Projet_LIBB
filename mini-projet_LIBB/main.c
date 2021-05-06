@@ -18,13 +18,8 @@
 #include <controle.h>
 
 messagebus_t bus;
-MUTEX_DECL(bus_lock); // @suppress("Field cannot be resolved")
+MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
-
-/*
-static thread_t *sensorsUpdateThd;
-static thread_t *robotControlThd;
-*/
 
 static void serial_start(void)
 {
@@ -38,21 +33,21 @@ static void serial_start(void)
 	sdStart(&SD3, &ser_cfg); // UART3.
 }
 
-static void timer11_start(void){
-    //General Purpose Timer configuration
-    //timer 11 is a 16 bit timer so we can measure time
-    //to about 65ms with a 1Mhz counter
-    static const GPTConfig gpt11cfg = {
-        1000000,        /* 1MHz timer clock in order to measure uS.*/
-        NULL,           /* Timer callback.*/
-        0,
-        0
-    };
-
-    gptStart(&GPTD11, &gpt11cfg);
-    //let the timer count to max value
-    gptStartContinuous(&GPTD11, 0xFFFF);
-}
+//static void timer11_start(void){
+//    //General Purpose Timer configuration
+//    timer 11 is a 16 bit timer so we can measure time
+//    //to about 65ms with a 1Mhz counter
+//    static const GPTConfig gpt11cfg = {
+//        1000000,        /* 1MHz timer clock in order to measure uS.*/
+//        NULL,           /* Timer callback.*/
+//        0,
+//        0
+//    };
+//
+//    gptStart(&GPTD11, &gpt11cfg);
+//    //let the timer count to max value
+//    gptStartContinuous(&GPTD11, 0xFFFF);
+//}
 
 int main(void)
 {
@@ -60,19 +55,20 @@ int main(void)
     chSysInit();
     mpu_init();
 
-    timer11_start();		//starts the timer 11
-    serial_start();			//starts the serial communication
-    usb_start();			//starts the USB communication
-    motors_init();			//inits the motors
-    imu_start();			//inits the imu and the i2c communication
-    proximity_start();		//inits the proximity sensors
+    //timer11_start();		//starts the timer 11
+    serial_start();			//démarre la serial communication
+    usb_start();			//démarre la commmunication USB
+    motors_init();			//initie les moteurs
+    imu_start();			//initie l'imu and la communication i2c
+    proximity_start();		//initie les capteurs IR de proximité
 
-    /** Inits the Inter Process Communication bus. */
-    messagebus_init(&bus, &bus_lock, &bus_condvar);
+    messagebus_init(&bus, &bus_lock, &bus_condvar);	// initie l'Inter Process Communication bus.
 
-    initThreads();
+    initThreads();			//initie les 2 threads définis dans controle.c
 
+    //Boucle infinie
     while(1) {
+    	//chprintf((BaseSequentialStream *)&SDU1, "%4dinfiniteLoop, ", 0);
         chThdSleepMilliseconds(1000);
     }
 }

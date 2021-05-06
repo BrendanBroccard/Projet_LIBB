@@ -32,10 +32,8 @@
 
 static proximity_msg_t prox_values;
 static imu_msg_t imu_values;
-static bool usingImu;
 
-//Ce thread va utiliser les variables globales, qui sont mises à jour par le second thread,
-//pour dicter au robot ce qu'il doit faire
+/* Ce thread va utiliser les variables globales, qui sont mises à jour par le second thread, pour dicter au robot ce qu'il doit faire */
 static THD_WORKING_AREA(robotControlThd_wa, 2048);
 static THD_FUNCTION(robotControlThd, arg)
 {
@@ -44,27 +42,29 @@ static THD_FUNCTION(robotControlThd, arg)
 
     systime_t time;
 
-    time = chVTGetSystemTime();
+    while(1) {
+    	time = chVTGetSystemTime();
 
-    moveTowardsUp();
+    	moveTowardsUp();																// Trouve la direction du sommet
 
-    bool obstacle_right = false;
-    bool obstacle_left = false;
-    obstacle_right = obstacle_detection(CAPTEUR_IR_FRONTRIGHT, OBSTACLE);
-    obstacle_left = obstacle_detection(CAPTEUR_IR_FRONTLEFT, OBSTACLE);
-    if(obstacle_right) {
-        dodge_left();
-        obstacle_right = false;
-    } else if(obstacle_left) {
-        dodge_right();
-        obstacle_left = false;
+    	bool obstacle_right = false;
+    	bool obstacle_left = false;
+    	obstacle_right = obstacle_detection(CAPTEUR_IR_FRONTRIGHT, OBSTACLE);			// Détecte un éventuel obstacle
+    	obstacle_left = obstacle_detection(CAPTEUR_IR_FRONTLEFT, OBSTACLE);
+    	if(obstacle_right) {															// Esquive l'éventuel obstacle
+    		dodge_left();
+    		obstacle_right = false;
+    	} else if(obstacle_left) {
+    		dodge_right();
+    		obstacle_left = false;
+    	}
+    	chprintf((BaseSequentialStream *)&SDU1, "%4dEsquive obstacle OK, ", 0);
+
+    	chThdSleepUntilWindowed(time, time + MS2ST(10));								//Reset à une fréquence de 100 Hz.
     }
-
-    chThdSleepUntilWindowed(time, time + MS2ST(10));
 }
 
-//Ce thread met à jour les valeurs des variables globales, qui concernent les valeurs mesurées
-//par les capteurs IR et l'IMU
+/* Ce thread met à jour les valeurs des variables globales, qui concernent les valeurs mesurées par les capteurs IR et l'IMU */
 static THD_WORKING_AREA(sensorsUpdateThd_wa, 2048);
 static THD_FUNCTION(sensorsUpdateThd, arg)
 {
@@ -72,30 +72,33 @@ static THD_FUNCTION(sensorsUpdateThd, arg)
     chRegSetThreadName(__FUNCTION__);
 
     systime_t time;
+    calibrate_acc();
+    calibrate_ir();
 
-    time = chVTGetSystemTime();
+    while(1) {
+    	time = chVTGetSystemTime();
 
-    if(usingImu) {
-    	messagebus_topic_t *imu_topic = messagebus_find_topic_blocking(&bus, "/imu");
-    	calibrate_acc();
-    	messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
-    } else {
-    	messagebus_topic_t *prox_topic = messagebus_find_topic_blocking(&bus, "/proximity");
-    	calibrate_ir();
-    	messagebus_topic_wait(prox_topic, &prox_values, sizeof(prox_values));
+    	messagebus_topic_t *imu_topic = messagebus_find_topic_blocking(&bus, "/imu");			// Mets à jour les données mesurées
+    	messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));						// par l'IMU
+    	chprintf((BaseSequentialStream *)&SDU1, "%4dupdatingImu, OK", 0);
+
+    	messagebus_topic_t *prox_topic = messagebus_find_topic_blocking(&bus, "/proximity");	// Mets à jour les données mesurées
+    	messagebus_topic_wait(prox_topic, &prox_values, sizeof(prox_values));					// par les capteurs IR de proximité
+    	chprintf((BaseSequentialStream *)&SDU1, "%4dupdatingIR OK, ", 0);
+
+    	chprintf((BaseSequentialStream *)&SDU1, "%4dsensorsUpdate OK, ", 0);
+    	chThdSleepUntilWindowed(time, time + MS2ST(10));										//Reset à une fréquence de 100 Hz.
     }
-
-    chThdSleepUntilWindowed(time, time + MS2ST(10));
 }
 
 void initThreads(void) {
 	chThdCreateStatic(sensorsUpdateThd_wa, sizeof(sensorsUpdateThd_wa), NORMALPRIO, sensorsUpdateThd, NULL);
     chThdCreateStatic(robotControlThd_wa, sizeof(robotControlThd_wa), NORMALPRIO, robotControlThd, NULL);
+    chprintf((BaseSequentialStream *)&SDU1, "%4d initThreads OK, ", 0);
 }
 
 void moveTowardsUp(void) {
-
-	usingImu = true;
+	//chprintf((BaseSequentialStream *)&SDU1, "%4dmoveTowardsUp, ", 0);
 
 	if((abs(imu_values.acc_offset[0]) > TRESHOLD) || (abs(imu_values.acc_offset[1]) > TRESHOLD)) {
 		if(imu_values.acc_offset[0] > TRESHOLD) {
@@ -111,7 +114,7 @@ void moveTowardsUp(void) {
 		stop_motors();
 	}
 
-	usingImu = false;
+	chprintf((BaseSequentialStream *)&SDU1, "%4dmoveTowardsUp OK, ", 0);
 }
 
 bool obstacle_detection(int capteur, int trigger) {
