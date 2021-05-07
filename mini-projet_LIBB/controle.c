@@ -58,9 +58,9 @@ static THD_FUNCTION(robotControlThd, arg)
     		dodge_right();
     		obstacle_left = false;
     	}
-    	chprintf((BaseSequentialStream *)&SDU1, "%4dEsquive obstacle OK, ", 0);
+    	//chprintf((BaseSequentialStream *)&SDU1, "%4dEsquive obstacle OK, ", 0);
 
-    	chThdSleepUntilWindowed(time, time + MS2ST(10));								//Reset à une fréquence de 100 Hz.
+    	chThdSleepUntilWindowed(time, time + MS2ST(100));								//Reset à une fréquence de 10 Hz.
     }
 }
 
@@ -72,39 +72,33 @@ static THD_FUNCTION(sensorsUpdateThd, arg)
     chRegSetThreadName(__FUNCTION__);
 
     systime_t time;
-    calibrate_acc();
+
+    messagebus_topic_t *imu_topic = messagebus_find_topic_blocking(&bus, "/imu");
+    messagebus_topic_t *prox_topic = messagebus_find_topic_blocking(&bus, "/proximity");
     calibrate_ir();
 
     while(1) {
     	time = chVTGetSystemTime();
 
-    	messagebus_topic_t *imu_topic = messagebus_find_topic_blocking(&bus, "/imu");			// Mets à jour les données mesurées
-    	messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));						// par l'IMU
-    	chprintf((BaseSequentialStream *)&SDU1, "%4dupdatingImu, OK", 0);
+        calibrate_acc();
+    	messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
+    	messagebus_topic_wait(prox_topic, &prox_values, sizeof(prox_values));
 
-    	messagebus_topic_t *prox_topic = messagebus_find_topic_blocking(&bus, "/proximity");	// Mets à jour les données mesurées
-    	messagebus_topic_wait(prox_topic, &prox_values, sizeof(prox_values));					// par les capteurs IR de proximité
-    	chprintf((BaseSequentialStream *)&SDU1, "%4dupdatingIR OK, ", 0);
-
-    	chprintf((BaseSequentialStream *)&SDU1, "%4dsensorsUpdate OK, ", 0);
-    	chThdSleepUntilWindowed(time, time + MS2ST(10));										//Reset à une fréquence de 100 Hz.
+    	chThdSleepUntilWindowed(time, time + MS2ST(100));										//Reset à une fréquence de 10 Hz.
     }
 }
 
 void initThreads(void) {
 	chThdCreateStatic(sensorsUpdateThd_wa, sizeof(sensorsUpdateThd_wa), NORMALPRIO, sensorsUpdateThd, NULL);
     chThdCreateStatic(robotControlThd_wa, sizeof(robotControlThd_wa), NORMALPRIO, robotControlThd, NULL);
-    chprintf((BaseSequentialStream *)&SDU1, "%4d initThreads OK, ", 0);
 }
 
 void moveTowardsUp(void) {
-	//chprintf((BaseSequentialStream *)&SDU1, "%4dmoveTowardsUp, ", 0);
-
 	if((abs(imu_values.acc_offset[0]) > TRESHOLD) || (abs(imu_values.acc_offset[1]) > TRESHOLD)) {
 		if(imu_values.acc_offset[0] > TRESHOLD) {
-			turn_right(MAX_SPEED/3);
+			turn_right(MAX_SPEED/2);
 		} else if(imu_values.acc_offset[0] < -TRESHOLD) {
-			turn_left(MAX_SPEED/3);
+			turn_left(MAX_SPEED/2);
 		} else if(imu_values.acc_offset[1] > TRESHOLD) {
 			go_forward();
 		} else if(imu_values.acc_offset[1] < -TRESHOLD) {
@@ -113,13 +107,10 @@ void moveTowardsUp(void) {
 	} else {
 		stop_motors();
 	}
-
-	chprintf((BaseSequentialStream *)&SDU1, "%4dmoveTowardsUp OK, ", 0);
 }
 
 bool obstacle_detection(int capteur, int trigger) {
 	bool obs = false;
-
 	if (get_calibrated_prox(capteur) > trigger) {
 		obs = true;
 	}

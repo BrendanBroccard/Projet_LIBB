@@ -33,21 +33,21 @@ static void serial_start(void)
 	sdStart(&SD3, &ser_cfg); // UART3.
 }
 
-//static void timer11_start(void){
-//    //General Purpose Timer configuration
-//    timer 11 is a 16 bit timer so we can measure time
-//    //to about 65ms with a 1Mhz counter
-//    static const GPTConfig gpt11cfg = {
-//        1000000,        /* 1MHz timer clock in order to measure uS.*/
-//        NULL,           /* Timer callback.*/
-//        0,
-//        0
-//    };
-//
-//    gptStart(&GPTD11, &gpt11cfg);
-//    //let the timer count to max value
-//    gptStartContinuous(&GPTD11, 0xFFFF);
-//}
+static void timer11_start(void){
+    //General Purpose Timer configuration
+    //timer 11 is a 16 bit timer so we can measure time
+    //to about 65ms with a 1Mhz counter
+    static const GPTConfig gpt11cfg = {
+        1000000,        /* 1MHz timer clock in order to measure uS.*/
+        NULL,           /* Timer callback.*/
+        0,
+        0
+    };
+
+    gptStart(&GPTD11, &gpt11cfg);
+    //let the timer count to max value
+    gptStartContinuous(&GPTD11, 0xFFFF);
+}
 
 int main(void)
 {
@@ -55,14 +55,16 @@ int main(void)
     chSysInit();
     mpu_init();
 
-    //timer11_start();		//starts the timer 11
+    timer11_start();		//démarre le timer 11
     serial_start();			//démarre la serial communication
     usb_start();			//démarre la commmunication USB
     motors_init();			//initie les moteurs
     imu_start();			//initie l'imu and la communication i2c
     proximity_start();		//initie les capteurs IR de proximité
 
-    messagebus_init(&bus, &bus_lock, &bus_condvar);	// initie l'Inter Process Communication bus.
+    messagebus_init(&bus, &bus_lock, &bus_condvar);	// initie l'Inter Process Communication bus
+
+    chThdSleepMilliseconds(2000);					//laisse le temps de tout initialiser
 
     initThreads();			//initie les 2 threads définis dans controle.c
 
