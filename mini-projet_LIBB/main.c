@@ -55,18 +55,18 @@ int main(void)
     chSysInit();
     mpu_init();
 
-    timer11_start();								//démarre le timer 11
-    serial_start();									//démarre la communication serial
-    usb_start();									//démarre la communication USB
-    motors_init();									//initie les moteurs
-    imu_start();									//initie l'imu and la communication i2c
-    proximity_start();								//initie les capteurs IR de proximité
+    timer11_start();								//Démarre le timer 11
+    serial_start();									//Démarre la communication serial
+    usb_start();									//Démarre la communication USB
+    motors_init();									//Initie les moteurs
+    imu_start();									//Initie l'imu and la communication i2c
+    proximity_start();								//Initie les capteurs IR de proximité
 
-    messagebus_init(&bus, &bus_lock, &bus_condvar);	// initie l'Inter Process Communication bus
+    messagebus_init(&bus, &bus_lock, &bus_condvar);	//Initie l'Inter Process Communication bus
 
-    chThdSleepMilliseconds(1000);					//laisse 1 seconde le temps de tout initialiser correctement
+    chThdSleepMilliseconds(1000);					//Laisse 1 seconde le temps de tout initialiser correctement
 
-    initThreads();									//initie les 2 threads définis dans controle.c
+    initThreads();									//Initie les 2 threads définis dans controle.c
 
     //Boucle infinie
     while(1) {

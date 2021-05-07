@@ -30,12 +30,14 @@
 #include <deplacement.h>
 #include <controle.h>
 
-static proximity_msg_t prox_values;
 static imu_msg_t imu_values;
+static proximity_msg_t prox_values;
+static bool lookingForDirection = true;
+static bool atTheTop = false;
 
-/* Ce thread va utiliser les variables globales, qui sont mises à jour par le second thread, pour dicter au robot ce qu'il doit faire */
-static THD_WORKING_AREA(robotControlThd_wa, 2048);
-static THD_FUNCTION(robotControlThd, arg)
+/* Ce thread va utiliser les valeurs mesurées par l'accéléromètre de l'IMU pour trouver la direction du sommet de la pente */
+static THD_WORKING_AREA(findDirectionThd_wa, 2048);
+static THD_FUNCTION(findDirectionThd, arg)
 {
     (void) arg;
     chRegSetThreadName(__FUNCTION__);
@@ -43,75 +45,76 @@ static THD_FUNCTION(robotControlThd, arg)
     systime_t time;
 
     messagebus_topic_t *imu_topic = messagebus_find_topic_blocking(&bus, "/imu");
-    messagebus_topic_t *prox_topic = messagebus_find_topic_blocking(&bus, "/proximity");
-    calibrate_ir();
 
     while(1) {
     	time = chVTGetSystemTime();
 
-    	calibrate_acc();
-    	messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
-    	moveTowardsUp();																// Trouve la direction du sommet
+    	lookingForDirection = true;
 
-    	bool obstacle_right = false;
-    	bool obstacle_left = false;
-    	messagebus_topic_wait(prox_topic, &prox_values, sizeof(prox_values));
-    	obstacle_right = obstacle_detection(CAPTEUR_IR_FRONTRIGHT, OBSTACLE);			// Détecte un éventuel obstacle
-    	obstacle_left = obstacle_detection(CAPTEUR_IR_FRONTLEFT, OBSTACLE);
-    	if(obstacle_right) {															// Esquive l'éventuel obstacle
-    		dodge_left();
-    		obstacle_right = false;
-    	} else if(obstacle_left) {
-    		dodge_right();
-    		obstacle_left = false;
+    	while(lookingForDirection) {
+    		calibrate_acc();
+    		messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
+    		moveTowardsUp();													// Trouve la direction du sommet de la pente
     	}
-    	//chprintf((BaseSequentialStream *)&SDU1, "%4dEsquive obstacle OK, ", 0);
 
-    	chThdSleepUntilWindowed(time, time + MS2ST(100));								//Reset à une fréquence de 10 Hz.
+    	chThdSleepUntilWindowed(time, time + MS2ST(100));						//Reset à une fréquence de 10 Hz.
     }
 }
 
-/* Ce thread met à jour les valeurs des variables globales, qui concernent les valeurs mesurées par les capteurs IR et l'IMU */
-/*static THD_WORKING_AREA(sensorsUpdateThd_wa, 2048);
-static THD_FUNCTION(sensorsUpdateThd, arg)
+/* Ce thread va utiliser les valeurs mesurées par les capteurs pour détecter et esquiver les éventuels obstacles */
+static THD_WORKING_AREA(checkObstacleThd_wa, 2048);
+static THD_FUNCTION(checkObstacleThd, arg)
 {
     (void) arg;
     chRegSetThreadName(__FUNCTION__);
 
     systime_t time;
 
-    messagebus_topic_t *imu_topic = messagebus_find_topic_blocking(&bus, "/imu");
     messagebus_topic_t *prox_topic = messagebus_find_topic_blocking(&bus, "/proximity");
     calibrate_ir();
 
     while(1) {
     	time = chVTGetSystemTime();
 
-        calibrate_acc();
-    	messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
-    	messagebus_topic_wait(prox_topic, &prox_values, sizeof(prox_values));
+    	if(!atTheTop) {
+    		messagebus_topic_wait(prox_topic, &prox_values, sizeof(prox_values));
+    		if(frontObstacleAnalysis()) {
+    			if(obstacle_detection(CAPTEUR_IR_FRONTRIGHT, OBSTACLE_TRIGGER)) {
+    				dodge_left();
+    			} else if(obstacle_detection(CAPTEUR_IR_FRONTLEFT, OBSTACLE_TRIGGER)) {
+    				dodge_right();
+    			} else if(obstacle_detection(CAPTEUR_IR_45DEGRIGHT, OBSTACLE_TRIGGER)) {
+    				dodge_frontleft();
+    			} else if(obstacle_detection(CAPTEUR_IR_45DEGLEFT, OBSTACLE_TRIGGER)) {
+    				dodge_frontright();
+    			}
+    		}
+    	}
 
-    	chThdSleepUntilWindowed(time, time + MS2ST(100));										//Reset à une fréquence de 10 Hz.
+    	chThdSleepUntilWindowed(time, time + MS2ST(100));						//Reset à une fréquence de 10 Hz.
     }
 }
-*/
+
 void initThreads(void) {
-	//chThdCreateStatic(sensorsUpdateThd_wa, sizeof(sensorsUpdateThd_wa), NORMALPRIO, sensorsUpdateThd, NULL);
-    chThdCreateStatic(robotControlThd_wa, sizeof(robotControlThd_wa), NORMALPRIO, robotControlThd, NULL);
+	chThdCreateStatic(findDirectionThd_wa, sizeof(findDirectionThd_wa), NORMALPRIO, findDirectionThd, NULL);
+    chThdCreateStatic(checkObstacleThd_wa, sizeof(checkObstacleThd_wa), NORMALPRIO, checkObstacleThd, NULL);
 }
 
 void moveTowardsUp(void) {
 	if((abs(imu_values.acc_offset[0]) > TRESHOLD) || (abs(imu_values.acc_offset[1]) > TRESHOLD)) {
+		atTheTop = false;
 		if(imu_values.acc_offset[0] > TRESHOLD) {
 			turn_right(MAX_SPEED/2);
 		} else if(imu_values.acc_offset[0] < -TRESHOLD) {
 			turn_left(MAX_SPEED/2);
 		} else if(imu_values.acc_offset[1] > TRESHOLD) {
+			lookingForDirection = false;
 			go_forward();
 		} else if(imu_values.acc_offset[1] < -TRESHOLD) {
 			demi_tour();
 		}
 	} else {
+		atTheTop = true;
 		stop_motors();
 	}
 }
@@ -121,19 +124,34 @@ bool obstacle_detection(int capteur, int trigger) {
 	if (get_calibrated_prox(capteur) > trigger) {
 		obs = true;
 	}
-
 	return obs;
+}
+
+bool frontObstacleAnalysis(void) {
+	if(obstacle_detection(CAPTEUR_IR_FRONTRIGHT, OBSTACLE_TRIGGER) || obstacle_detection(CAPTEUR_IR_FRONTLEFT, OBSTACLE_TRIGGER) ||
+	   obstacle_detection(CAPTEUR_IR_45DEGRIGHT, OBSTACLE_TRIGGER) || obstacle_detection(CAPTEUR_IR_45DEGLEFT, OBSTACLE_TRIGGER)) {
+		return true;
+	} else {
+		return false;
+	}
 }
 
 void dodge_left(void) {
 	quart_de_tour_left();
-	bool obs_right = true;
 	go_forward();
-	while(obs_right) {
-		obs_right = obstacle_detection(CAPTEUR_IR_RIGHT, SIDE_OBSTACLE);
+	while(obstacle_detection(CAPTEUR_IR_RIGHT, SIDE_OBSTACLE_TRIGGER)) {
+		if(frontObstacleAnalysis()) {
+			demi_tour();												//Fais demi-tour s'il recontre un obstacle latéral
+		}
+		if(obstacle_detection(CAPTEUR_IR_RIGHT, OBSTACLE_TRIGGER*3)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
+			small_turn_left();
+		}
+		if(obstacle_detection(CAPTEUR_IR_LEFT, OBSTACLE_TRIGGER*3)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
+			small_turn_right();
+		}
 	}
 	right_motor_set_pos(RESET_VALUE);
-	while(abs(right_motor_get_pos()) < DODGE_OBSTACLE)  {		//Avance un dernier coup pour esquiver le coin de l'obstacle
+	while(abs(right_motor_get_pos()) < DODGE_OBSTACLE)  {				//Avance encore un peu pour éviter de toucher le coin de l'obstacle
 	}
 	stop_motors();
 	right_motor_set_pos(RESET_VALUE);
@@ -142,15 +160,65 @@ void dodge_left(void) {
 
 void dodge_right(void) {
 	quart_de_tour_right();
-	bool obs_left = true;
 	go_forward();
-	while(obs_left) {
-		obs_left = obstacle_detection(CAPTEUR_IR_LEFT, SIDE_OBSTACLE);
+	while(obstacle_detection(CAPTEUR_IR_LEFT, SIDE_OBSTACLE_TRIGGER)) {
+		if(frontObstacleAnalysis()) {
+			demi_tour();												//Fais demi-tour s'il recontre un obstacle latéral
+		}
+		if(obstacle_detection(CAPTEUR_IR_LEFT, OBSTACLE_TRIGGER*3)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
+			small_turn_right();
+		}
+		if(obstacle_detection(CAPTEUR_IR_RIGHT, OBSTACLE_TRIGGER*3)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
+			small_turn_left();
+		}
 	}
 	right_motor_set_pos(RESET_VALUE);
-	while(abs(right_motor_get_pos()) < DODGE_OBSTACLE)  {		//Avance un dernier coup pour esquiver le coin de l'obstacle
+	while(abs(right_motor_get_pos()) < DODGE_OBSTACLE)  {				//Avance encore un peu pour éviter de toucher le coin de l'obstacle
 	}
 	stop_motors();
 	right_motor_set_pos(RESET_VALUE);
 	quart_de_tour_left();
+}
+
+void dodge_frontleft(void) {
+	huitieme_de_tour_left();
+	go_forward();
+	while(obstacle_detection(CAPTEUR_IR_RIGHT, SIDE_OBSTACLE_TRIGGER)) {
+		if(frontObstacleAnalysis()) {
+			demi_tour();												//Fais demi-tour s'il recontre un obstacle latéral
+		}
+		if(obstacle_detection(CAPTEUR_IR_RIGHT, OBSTACLE_TRIGGER*3)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
+			small_turn_left();
+		}
+		if(obstacle_detection(CAPTEUR_IR_LEFT, OBSTACLE_TRIGGER*3)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
+			small_turn_right();
+		}
+	}
+	right_motor_set_pos(RESET_VALUE);
+	while(abs(right_motor_get_pos()) < DODGE_OBSTACLE*sqrt(2))  {		//Avance encore un peu pour éviter de toucher le coin de l'obstacle
+	}
+	stop_motors();
+	huitieme_de_tour_right();
+}
+
+void dodge_frontright(void) {
+	huitieme_de_tour_right();
+	go_forward();
+	while(obstacle_detection(CAPTEUR_IR_LEFT, SIDE_OBSTACLE_TRIGGER)) {
+		if(frontObstacleAnalysis()) {
+			demi_tour();												//Fais demi-tour s'il recontre un obstacle latéral
+		}
+		if(obstacle_detection(CAPTEUR_IR_RIGHT, OBSTACLE_TRIGGER*3)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
+			small_turn_left();
+		}
+		if(obstacle_detection(CAPTEUR_IR_LEFT, OBSTACLE_TRIGGER*3)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
+			small_turn_right();
+		}
+	}
+	right_motor_set_pos(RESET_VALUE);
+	while(abs(right_motor_get_pos()) < DODGE_OBSTACLE*sqrt(2))  {		//Avance encore un peu pour éviter de toucher le coin de l'obstacle
+	}
+	stop_motors();
+	right_motor_set_pos(RESET_VALUE);
+	huitieme_de_tour_left();
 }

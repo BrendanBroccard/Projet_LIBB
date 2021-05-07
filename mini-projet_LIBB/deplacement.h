@@ -20,7 +20,11 @@ void turn_right(int speed);
 void turn_left(int speed);
 void quart_de_tour_right(void);
 void quart_de_tour_left(void);
+void huitieme_de_tour_right(void);
+void huitieme_de_tour_left(void);
 void demi_tour(void);
+void small_turn_right(void);
+void small_turn_left(void);
 void go_forward(void);
 void stop_motors(void);
 
