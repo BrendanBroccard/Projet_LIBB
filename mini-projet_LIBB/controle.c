@@ -42,13 +42,20 @@ static THD_FUNCTION(robotControlThd, arg)
 
     systime_t time;
 
+    messagebus_topic_t *imu_topic = messagebus_find_topic_blocking(&bus, "/imu");
+    messagebus_topic_t *prox_topic = messagebus_find_topic_blocking(&bus, "/proximity");
+    calibrate_ir();
+
     while(1) {
     	time = chVTGetSystemTime();
 
+    	calibrate_acc();
+    	messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
     	moveTowardsUp();																// Trouve la direction du sommet
 
     	bool obstacle_right = false;
     	bool obstacle_left = false;
+    	messagebus_topic_wait(prox_topic, &prox_values, sizeof(prox_values));
     	obstacle_right = obstacle_detection(CAPTEUR_IR_FRONTRIGHT, OBSTACLE);			// Détecte un éventuel obstacle
     	obstacle_left = obstacle_detection(CAPTEUR_IR_FRONTLEFT, OBSTACLE);
     	if(obstacle_right) {															// Esquive l'éventuel obstacle
@@ -65,7 +72,7 @@ static THD_FUNCTION(robotControlThd, arg)
 }
 
 /* Ce thread met à jour les valeurs des variables globales, qui concernent les valeurs mesurées par les capteurs IR et l'IMU */
-static THD_WORKING_AREA(sensorsUpdateThd_wa, 2048);
+/*static THD_WORKING_AREA(sensorsUpdateThd_wa, 2048);
 static THD_FUNCTION(sensorsUpdateThd, arg)
 {
     (void) arg;
@@ -87,9 +94,9 @@ static THD_FUNCTION(sensorsUpdateThd, arg)
     	chThdSleepUntilWindowed(time, time + MS2ST(100));										//Reset à une fréquence de 10 Hz.
     }
 }
-
+*/
 void initThreads(void) {
-	chThdCreateStatic(sensorsUpdateThd_wa, sizeof(sensorsUpdateThd_wa), NORMALPRIO, sensorsUpdateThd, NULL);
+	//chThdCreateStatic(sensorsUpdateThd_wa, sizeof(sensorsUpdateThd_wa), NORMALPRIO, sensorsUpdateThd, NULL);
     chThdCreateStatic(robotControlThd_wa, sizeof(robotControlThd_wa), NORMALPRIO, robotControlThd, NULL);
 }
 
