@@ -45,17 +45,31 @@ static THD_FUNCTION(findDirectionThd, arg)
     systime_t time;
 
     messagebus_topic_t *imu_topic = messagebus_find_topic_blocking(&bus, "/imu");
+    calibrate_acc();
+    messagebus_topic_t *prox_topic = messagebus_find_topic_blocking(&bus, "/proximity");
+    calibrate_ir();
 
     while(1) {
     	time = chVTGetSystemTime();
 
-    	lookingForDirection = true;
+    	messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
+    	moveTowardsUp();														// Trouve la direction du sommet de la pente
 
-    	while(lookingForDirection) {
-    		calibrate_acc();
-    		messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
-    		moveTowardsUp();													// Trouve la direction du sommet de la pente
-    	}
+    	messagebus_topic_wait(prox_topic, &prox_values, sizeof(prox_values));
+
+    	    		if(obstacle_detection(CAPTEUR_IR_FRONTRIGHT, OBSTACLE_TRIGGER)) {
+    	    			dodge_left();
+    	    			//chprintf((BaseSequentialStream *)&SDU1, "#DAB LEFT%4d# ", get_calibrated_prox(CAPTEUR_IR_FRONTRIGHT));
+    	    		} else if(obstacle_detection(CAPTEUR_IR_FRONTLEFT, OBSTACLE_TRIGGER)) {
+    	    			dodge_right();
+    	    			//chprintf((BaseSequentialStream *)&SDU1, "#DAB RIGHT%4d# ", get_calibrated_prox(CAPTEUR_IR_FRONTLEFT));
+    	    		} else if(obstacle_detection(CAPTEUR_IR_45DEGRIGHT, OBSTACLE_TRIGGER)) {
+    	    			dodge_frontleft();
+    	    			//chprintf((BaseSequentialStream *)&SDU1, "#DAB 45LEFT%4d# ", get_calibrated_prox(CAPTEUR_IR_FRONTLEFT));
+    	    		} else if(obstacle_detection(CAPTEUR_IR_45DEGLEFT, OBSTACLE_TRIGGER)) {
+    	    			dodge_frontright();
+    	    			//chprintf((BaseSequentialStream *)&SDU1, "#DAB 45RIGHT%4d# ", get_calibrated_prox(CAPTEUR_IR_FRONTLEFT));
+    	    		}
 
     	chThdSleepUntilWindowed(time, time + MS2ST(100));						//Reset à une fréquence de 10 Hz.
     }
@@ -76,20 +90,24 @@ static THD_FUNCTION(checkObstacleThd, arg)
     while(1) {
     	time = chVTGetSystemTime();
 
-    	if(!atTheTop) {
+    	//if(!atTheTop) {
     		messagebus_topic_wait(prox_topic, &prox_values, sizeof(prox_values));
-    		if(frontObstacleAnalysis()) {
-    			if(obstacle_detection(CAPTEUR_IR_FRONTRIGHT, OBSTACLE_TRIGGER)) {
-    				dodge_left();
-    			} else if(obstacle_detection(CAPTEUR_IR_FRONTLEFT, OBSTACLE_TRIGGER)) {
-    				dodge_right();
-    			} else if(obstacle_detection(CAPTEUR_IR_45DEGRIGHT, OBSTACLE_TRIGGER)) {
-    				dodge_frontleft();
-    			} else if(obstacle_detection(CAPTEUR_IR_45DEGLEFT, OBSTACLE_TRIGGER)) {
-    				dodge_frontright();
-    			}
+
+    		if(obstacle_detection(CAPTEUR_IR_FRONTRIGHT, OBSTACLE_TRIGGER)) {
+    			dodge_left();
+    			//chprintf((BaseSequentialStream *)&SDU1, "#DAB LEFT%4d# ", get_calibrated_prox(CAPTEUR_IR_FRONTRIGHT));
+    		} else if(obstacle_detection(CAPTEUR_IR_FRONTLEFT, OBSTACLE_TRIGGER)) {
+    			dodge_right();
+    			//chprintf((BaseSequentialStream *)&SDU1, "#DAB RIGHT%4d# ", get_calibrated_prox(CAPTEUR_IR_FRONTLEFT));
+    		} else if(obstacle_detection(CAPTEUR_IR_45DEGRIGHT, OBSTACLE_TRIGGER)) {
+    			dodge_frontleft();
+    			//chprintf((BaseSequentialStream *)&SDU1, "#DAB 45LEFT%4d# ", get_calibrated_prox(CAPTEUR_IR_FRONTLEFT));
+    		} else if(obstacle_detection(CAPTEUR_IR_45DEGLEFT, OBSTACLE_TRIGGER)) {
+    			dodge_frontright();
+    			//chprintf((BaseSequentialStream *)&SDU1, "#DAB 45RIGHT%4d# ", get_calibrated_prox(CAPTEUR_IR_FRONTLEFT));
     		}
-    	}
+
+    	//}
 
     	chThdSleepUntilWindowed(time, time + MS2ST(100));						//Reset à une fréquence de 10 Hz.
     }
@@ -97,20 +115,29 @@ static THD_FUNCTION(checkObstacleThd, arg)
 
 void initThreads(void) {
 	chThdCreateStatic(findDirectionThd_wa, sizeof(findDirectionThd_wa), NORMALPRIO, findDirectionThd, NULL);
-    chThdCreateStatic(checkObstacleThd_wa, sizeof(checkObstacleThd_wa), NORMALPRIO, checkObstacleThd, NULL);
+    //chThdCreateStatic(checkObstacleThd_wa, sizeof(checkObstacleThd_wa), NORMALPRIO, checkObstacleThd, NULL);
 }
 
 void moveTowardsUp(void) {
-	if((abs(imu_values.acc_offset[0]) > TRESHOLD) || (abs(imu_values.acc_offset[1]) > TRESHOLD)) {
+	//chprintf((BaseSequentialStream *)&SDU1, "acc_offset:%4d ", imu_values.acc_offset[0]);
+	//chprintf((BaseSequentialStream *)&SDU1, "acceleration:%4d ", imu_values.acceleration[0]);
+	//chprintf((BaseSequentialStream *)&SDU1, "acc_raw:%4d ", imu_values.acc_raw[0]);
+
+	int16_t acc_x = imu_values.acc_raw[0];//-imu_values.acc_offset[0];
+	int16_t acc_y = imu_values.acc_raw[1];//-imu_values.acc_offset[1];
+
+	//chprintf((BaseSequentialStream *)&SDU1, "|MOVE%4d |", acc_x);
+
+	if((abs(acc_x) > TRESHOLD) || (abs(acc_y) > TRESHOLD)) {
 		atTheTop = false;
-		if(imu_values.acc_offset[0] > TRESHOLD) {
+		if(acc_x > TRESHOLD) {
 			turn_right(MAX_SPEED/2);
-		} else if(imu_values.acc_offset[0] < -TRESHOLD) {
+		} else if(acc_x < -TRESHOLD) {
 			turn_left(MAX_SPEED/2);
-		} else if(imu_values.acc_offset[1] > TRESHOLD) {
+		} else if(acc_y > TRESHOLD) {
 			lookingForDirection = false;
 			go_forward();
-		} else if(imu_values.acc_offset[1] < -TRESHOLD) {
+		} else if(acc_y < -TRESHOLD) {
 			demi_tour();
 		}
 	} else {
