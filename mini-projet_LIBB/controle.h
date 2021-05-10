@@ -23,8 +23,8 @@ extern "C" {
 #define CAPTEUR_IR_LEFT 		5
 #define CAPTEUR_IR_RIGHTBACK	3
 #define CAPTEUR_IR_BACKLEFT 	4
-#define DODGE_OBSTACLE			400
-#define TRESHOLD				1000
+#define DODGE_OBSTACLE			350
+#define TRESHOLD				600
 #define SMALL_TURN				50
 
 void initThreads(void);

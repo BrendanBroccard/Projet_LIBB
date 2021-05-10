@@ -33,29 +33,14 @@ static void serial_start(void)
 	sdStart(&SD3, &ser_cfg); // UART3.
 }
 
-static void timer11_start(void){
-    //General Purpose Timer configuration
-    //timer 11 is a 16 bit timer so we can measure time
-    //to about 65ms with a 1Mhz counter
-    static const GPTConfig gpt11cfg = {
-        1000000,        /* 1MHz timer clock in order to measure uS.*/
-        NULL,           /* Timer callback.*/
-        0,
-        0
-    };
-
-    gptStart(&GPTD11, &gpt11cfg);
-    //let the timer count to max value
-    gptStartContinuous(&GPTD11, 0xFFFF);
-}
-
 int main(void)
 {
     halInit();
     chSysInit();
     mpu_init();
 
-    timer11_start();								//Démarre le timer 11
+    //Allume des LEDs d'initiation
+
     serial_start();									//Démarre la communication serial
     usb_start();									//Démarre la communication USB
     motors_init();									//Initie les moteurs
@@ -64,13 +49,11 @@ int main(void)
 
     messagebus_init(&bus, &bus_lock, &bus_condvar);	//Initie l'Inter Process Communication bus
 
-    chThdSleepMilliseconds(1000);					//Laisse 1 seconde le temps de tout initialiser correctement
+    initThreads();									//Initie le thread défini dans controle.c
 
-    initThreads();									//Initie les 2 threads définis dans controle.c
-
-    //Boucle infinie
+    //Boucle infinie du main
     while(1) {
-        chThdSleepMilliseconds(100);
+        chThdSleepMilliseconds(1000);
     }
 }
 
