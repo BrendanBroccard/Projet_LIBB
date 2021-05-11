@@ -22,6 +22,7 @@
 
 #include "i2c_bus.h"
 #include "motors.h"
+#include "leds.h"
 #include "sensors/imu.h"
 #include "sensors/proximity.h"
 #include "msgbus/messagebus.h"
@@ -50,7 +51,8 @@ static THD_FUNCTION(findDirectionThd, arg)
 
     chThdSleepMilliseconds(1000);													//Laisse une marge de stabilisation
 
-    //Eteint les LEDs d'initiation
+    //Eteint les LEDs témoins de l'initialisation
+    clear_leds();
 
     while(1) {
     	time = chVTGetSystemTime();
@@ -131,6 +133,7 @@ void moveTowardsUp(void)  {
 
 	if((abs(acc_x) > TRESHOLD) || (abs(acc_y) > TRESHOLD)) {
 		atTheTop = false;
+		set_body_led(0);
 		if(acc_x > TRESHOLD) {
 			turn_right(MAX_SPEED/2);
 		} else if(acc_x < -TRESHOLD) {
@@ -143,6 +146,7 @@ void moveTowardsUp(void)  {
 		}
 	} else {
 		atTheTop = true;
+		set_body_led(1);
 		stop_motors();
 	}
 }

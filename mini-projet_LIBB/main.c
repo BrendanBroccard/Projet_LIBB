@@ -9,8 +9,10 @@
 #include <usbcfg.h>
 #include <main.h>
 #include <chprintf.h>
+
 #include "i2c_bus.h"
 #include "motors.h"
+#include "leds.h"
 #include "sensors/imu.h"
 #include "sensors/proximity.h"
 #include "msgbus/messagebus.h"
@@ -39,7 +41,11 @@ int main(void)
     chSysInit();
     mpu_init();
 
-    //Allume des LEDs d'initiation
+    //Allume des LEDs témoins de l'initialisation
+    set_led(LED1, 1);
+    set_led(LED3, 1);
+    set_led(LED5, 1);
+    set_led(LED7, 1);
 
     serial_start();									//Démarre la communication serial
     usb_start();									//Démarre la communication USB
@@ -47,7 +53,7 @@ int main(void)
     imu_start();									//Initie l'imu and la communication i2c
     proximity_start();								//Initie les capteurs IR de proximité
 
-    messagebus_init(&bus, &bus_lock, &bus_condvar);	//Initie l'Inter Process Communication bus
+    messagebus_init(&bus, &bus_lock, &bus_condvar);	//Initie le bus de communication
 
     initThreads();									//Initie le thread défini dans controle.c
 
