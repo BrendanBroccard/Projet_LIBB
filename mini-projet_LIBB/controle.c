@@ -49,10 +49,9 @@ static THD_FUNCTION(findDirectionThd, arg)
     messagebus_topic_t *prox_topic = messagebus_find_topic_blocking(&bus, "/proximity");
     calibrate_ir();
 
-    chThdSleepMilliseconds(1000);													//Laisse une marge de stabilisation
+    chThdSleepMilliseconds(1000);													//Laisse une sseconde de marge de stabilisation
 
-    //Eteint les LEDs témoins de l'initialisation
-    clear_leds();
+    clear_leds();																	//Eteint les LEDs témoins de l'initialisation
 
     while(1) {
     	time = chVTGetSystemTime();
@@ -124,13 +123,12 @@ static THD_FUNCTION(checkObstacleThd, arg)
 
 void init_thread(void) {
 	chThdCreateStatic(findDirectionThd_wa, sizeof(findDirectionThd_wa), NORMALPRIO+1, findDirectionThd, NULL);
-    //chThdCreateStatic(checkObstacleThd_wa, sizeof(checkObstacleThd_wa), NORMALPRIO, checkObstacleThd, NULL);
 }
 
 void moveTowardsUp(void)  {
 
-	int16_t acc_x = imu_values.acc_raw[0]-imu_values.acc_offset[0];
-	int16_t acc_y = imu_values.acc_raw[1]-imu_values.acc_offset[1];
+	int16_t acc_x = get_acc_filtered(X_AXIS, FILTER_SIZE);	//imu_values.acc_raw[0]-imu_values.acc_offset[0];
+	int16_t acc_y = get_acc_filtered(Y_AXIS, FILTER_SIZE);	//imu_values.acc_raw[1]-imu_values.acc_offset[1];
 
 	if((abs(acc_x) > TRESHOLD) || (abs(acc_y) > TRESHOLD)) {
 		atTheTop = false;

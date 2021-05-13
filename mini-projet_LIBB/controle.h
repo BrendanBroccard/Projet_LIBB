@@ -15,6 +15,7 @@ extern "C" {
 #define RESET_VALUE 			0
 #define ON						1
 #define OFF						0
+#define RGB_MAX					100		//Intensité que l'on souhaite donner aux LED RGB
 
 typedef enum {							//Les numéros des différents capteurs IR
 	CAPTEUR_IR_FRONTRIGHT,
@@ -25,7 +26,7 @@ typedef enum {							//Les numéros des différents capteurs IR
 	CAPTEUR_IR_LEFT,
 	CAPTEUR_IR_45DEGLEFT,
 	CAPTEUR_IR_FRONTLEFT,
-	NUM_CAPTEUR_IR,
+	NB_CAPTEURS_IR,
 } sensor_ir_number;
 
 #define OBSTACLE_TRIGGER 		50
@@ -34,6 +35,9 @@ typedef enum {							//Les numéros des différents capteurs IR
 #define DODGE_OBSTACLE			350
 
 #define TRESHOLD				600		//Le treshold choisi auquel on compare les valeurs d'accélérations mesurées par l'IMU
+#define X_AXIS					0
+#define Y_AXIS					1
+#define FILTER_SIZE				50		//Nombre de mesures dont on calcule la moyenne pour obtenir l'accélération mesurée
 
 #define SMALL_TURN				50		//Nombre de step que l'on a défini pour que le robot s'écarte d'une paroi latérale
 #define QUART_TOUR				320		//Nombre de step que prend le robot pour faire un quart de tour

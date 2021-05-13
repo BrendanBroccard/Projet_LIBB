@@ -42,9 +42,7 @@ int main(void)
     mpu_init();
 
     //Allume des LEDs témoins de l'initialisation
-    set_led(LED1, ON);
     set_led(LED3, ON);
-    set_led(LED5, ON);
     set_led(LED7, ON);
 
     serial_start();									//Démarre la communication serial
