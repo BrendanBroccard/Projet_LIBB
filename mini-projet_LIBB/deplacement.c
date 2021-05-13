@@ -35,13 +35,31 @@ void turn_left(int speed) {
 	right_motor_set_speed(speed);
 }
 
+void turn_right_until(int distance) {
+	right_motor_set_pos(RESET_VALUE);
+	turn_right(MAX_SPEED);
+	while(abs(right_motor_get_pos()) < distance)  {
+	}
+	stop_motors();
+	right_motor_set_pos(RESET_VALUE);
+}
+
+void turn_left_until(int distance) {
+	left_motor_set_pos(RESET_VALUE);
+	turn_left(MAX_SPEED);
+	while(abs(left_motor_get_pos()) < distance)  {
+	}
+	stop_motors();
+	left_motor_set_pos(RESET_VALUE);
+}
+
+/*
 void quart_de_tour_right(void) {
 	right_motor_set_pos(RESET_VALUE);
 	turn_right(MAX_SPEED);
 	while(abs(right_motor_get_pos()) < QUART_TOUR)  {
 	}
-	left_motor_set_speed(RESET_VALUE);
-	right_motor_set_speed(RESET_VALUE);
+	stop_motors();
 	right_motor_set_pos(RESET_VALUE);
 }
 
@@ -50,8 +68,7 @@ void quart_de_tour_left(void) {
 	turn_left(MAX_SPEED);
 	while(abs(left_motor_get_pos()) < QUART_TOUR)  {
 	}
-	left_motor_set_speed(RESET_VALUE);
-	right_motor_set_speed(RESET_VALUE);
+	stop_motors();
 	left_motor_set_pos(RESET_VALUE);
 }
 
@@ -104,6 +121,7 @@ void small_turn_left(void) {
 	right_motor_set_speed(RESET_VALUE);
 	left_motor_set_pos(RESET_VALUE);
 }
+*/
 
 void go_forward(void) {
 	left_motor_set_speed(MAX_SPEED);

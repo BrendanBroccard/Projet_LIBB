@@ -42,10 +42,10 @@ int main(void)
     mpu_init();
 
     //Allume des LEDs témoins de l'initialisation
-    set_led(LED1, 1);
-    set_led(LED3, 1);
-    set_led(LED5, 1);
-    set_led(LED7, 1);
+    set_led(LED1, ON);
+    set_led(LED3, ON);
+    set_led(LED5, ON);
+    set_led(LED7, ON);
 
     serial_start();									//Démarre la communication serial
     usb_start();									//Démarre la communication USB
@@ -55,7 +55,7 @@ int main(void)
 
     messagebus_init(&bus, &bus_lock, &bus_condvar);	//Initie le bus de communication
 
-    initThreads();									//Initie le thread défini dans controle.c
+    init_thread();									//Initie le thread défini dans controle.c
 
     //Boucle infinie du main
     while(1) {

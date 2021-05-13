@@ -13,23 +13,36 @@ extern "C" {
 #endif
 
 #define RESET_VALUE 			0
-#define OBSTACLE_TRIGGER 		50
-#define SIDE_OBSTACLE_TRIGGER	5
-#define CAPTEUR_IR_FRONTRIGHT 	0
-#define CAPTEUR_IR_FRONTLEFT	7
-#define CAPTEUR_IR_45DEGRIGHT	1
-#define CAPTEUR_IR_45DEGLEFT	6
-#define CAPTEUR_IR_RIGHT		2
-#define CAPTEUR_IR_LEFT 		5
-#define CAPTEUR_IR_RIGHTBACK	3
-#define CAPTEUR_IR_BACKLEFT 	4
-#define DODGE_OBSTACLE			350
-#define TRESHOLD				600
-#define SMALL_TURN				50
+#define ON						1
+#define OFF						0
 
-void initThreads(void);
+typedef enum {							//Les numéros des différents capteurs IR
+	CAPTEUR_IR_FRONTRIGHT,
+	CAPTEUR_IR_45DEGRIGHT,
+	CAPTEUR_IR_RIGHT,
+	CAPTEUR_IR_RIGHTBACK,
+	CAPTEUR_IR_LEFTBACK,
+	CAPTEUR_IR_LEFT,
+	CAPTEUR_IR_45DEGLEFT,
+	CAPTEUR_IR_FRONTLEFT,
+	NUM_CAPTEUR_IR,
+} sensor_ir_number;
+
+#define OBSTACLE_TRIGGER 		50
+#define HIGH_OBSTACLE_TRIGGER	150
+#define SIDE_OBSTACLE_TRIGGER	5
+#define DODGE_OBSTACLE			350
+
+#define TRESHOLD				600		//Le treshold choisi auquel on compare les valeurs d'accélérations mesurées par l'IMU
+
+#define SMALL_TURN				50		//Nombre de step que l'on a défini pour que le robot s'écarte d'une paroi latérale
+#define QUART_TOUR				320		//Nombre de step que prend le robot pour faire un quart de tour
+#define DEMI_TOUR				640		//Nombre de step que prend le robot pour faire un demi-tour
+#define HUITIEME_TOUR			160		//Nombre de step que prend le robot pour faire un hutième de tour
+
+void init_thread(void);
 void moveTowardsUp(void);
-bool obstacle_detection(int capteur, int trigger);
+bool obstacle_detection(sensor_ir_number capteur, int trigger);
 bool frontObstacleAnalysis(void);
 void dodge_right(void);
 void dodge_left(void);

@@ -61,12 +61,13 @@ static THD_FUNCTION(findDirectionThd, arg)
     	while(lookingForDirection) {												//Se focalise uniquement sur l'accéléromètre jusqu'à avoir la bonne direction à emprunter
     		messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
     		moveTowardsUp();														//Cherche la direction du sommet de la pente
-    		chThdSleepMilliseconds(200);
+    		//chThdSleepMilliseconds(200);
     	}
 
     	if(!atTheTop) {																//Empêche le robot d'entamer une esquive lorsqu'il est à l'arrêt sur un plat
     		messagebus_topic_wait(prox_topic, &prox_values, sizeof(prox_values));
 
+    		//obstacleCheck();
     		if(obstacle_detection(CAPTEUR_IR_FRONTRIGHT, OBSTACLE_TRIGGER)) {
     			dodge_left();
     		} else if(obstacle_detection(CAPTEUR_IR_FRONTLEFT, OBSTACLE_TRIGGER)) {
@@ -121,8 +122,8 @@ static THD_FUNCTION(checkObstacleThd, arg)
 }
 */
 
-void initThreads(void) {
-	chThdCreateStatic(findDirectionThd_wa, sizeof(findDirectionThd_wa), NORMALPRIO, findDirectionThd, NULL);
+void init_thread(void) {
+	chThdCreateStatic(findDirectionThd_wa, sizeof(findDirectionThd_wa), NORMALPRIO+1, findDirectionThd, NULL);
     //chThdCreateStatic(checkObstacleThd_wa, sizeof(checkObstacleThd_wa), NORMALPRIO, checkObstacleThd, NULL);
 }
 
@@ -142,7 +143,7 @@ void moveTowardsUp(void)  {
 			lookingForDirection = false;
 			go_forward();
 		} else if(acc_y < -TRESHOLD) {
-			demi_tour();
+			turn_right_until(DEMI_TOUR);
 		}
 	} else {
 		atTheTop = true;
@@ -151,7 +152,7 @@ void moveTowardsUp(void)  {
 	}
 }
 
-bool obstacle_detection(int capteur, int trigger) {
+bool obstacle_detection(sensor_ir_number capteur, int trigger) {
 	bool obs = false;
 	if (get_calibrated_prox(capteur) > trigger) {
 		obs = true;
@@ -160,8 +161,8 @@ bool obstacle_detection(int capteur, int trigger) {
 }
 
 bool frontObstacleAnalysis(void) {
-	if(obstacle_detection(CAPTEUR_IR_FRONTRIGHT, OBSTACLE_TRIGGER) || obstacle_detection(CAPTEUR_IR_FRONTLEFT, OBSTACLE_TRIGGER) ||
-	   obstacle_detection(CAPTEUR_IR_45DEGRIGHT, OBSTACLE_TRIGGER) || obstacle_detection(CAPTEUR_IR_45DEGLEFT, OBSTACLE_TRIGGER)) {
+	if(obstacle_detection(CAPTEUR_IR_FRONTRIGHT, OBSTACLE_TRIGGER) || obstacle_detection(CAPTEUR_IR_FRONTLEFT, OBSTACLE_TRIGGER)) {
+	   //|| obstacle_detection(CAPTEUR_IR_45DEGRIGHT, OBSTACLE_TRIGGER) || obstacle_detection(CAPTEUR_IR_45DEGLEFT, OBSTACLE_TRIGGER)) {
 		return true;
 	} else {
 		return false;
@@ -169,17 +170,17 @@ bool frontObstacleAnalysis(void) {
 }
 
 void dodge_left(void) {
-	quart_de_tour_left();
+	turn_left_until(QUART_TOUR);
 	go_forward();
 	while(obstacle_detection(CAPTEUR_IR_RIGHT, SIDE_OBSTACLE_TRIGGER)) {
 		if(frontObstacleAnalysis()) {
-			demi_tour();												//Fais demi-tour s'il recontre un obstacle latéral
+			turn_left_until(DEMI_TOUR);												//Fais demi-tour s'il recontre un obstacle latéral
 		}
-		if(obstacle_detection(CAPTEUR_IR_RIGHT, OBSTACLE_TRIGGER*3)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
-			small_turn_left();
+		if(obstacle_detection(CAPTEUR_IR_RIGHT, HIGH_OBSTACLE_TRIGGER)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
+			turn_left_until(SMALL_TURN);
 		}
-		if(obstacle_detection(CAPTEUR_IR_LEFT, OBSTACLE_TRIGGER*3)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
-			small_turn_right();
+		if(obstacle_detection(CAPTEUR_IR_LEFT, HIGH_OBSTACLE_TRIGGER)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
+			turn_right_until(SMALL_TURN);
 		}
 	}
 	right_motor_set_pos(RESET_VALUE);
@@ -187,21 +188,21 @@ void dodge_left(void) {
 	}
 	stop_motors();
 	right_motor_set_pos(RESET_VALUE);
-	quart_de_tour_right();
+	//quart_de_tour_right();
 }
 
 void dodge_right(void) {
-	quart_de_tour_right();
+	turn_right_until(QUART_TOUR);
 	go_forward();
 	while(obstacle_detection(CAPTEUR_IR_LEFT, SIDE_OBSTACLE_TRIGGER)) {
 		if(frontObstacleAnalysis()) {
-			demi_tour();												//Fais demi-tour s'il recontre un obstacle latéral
+			turn_right_until(DEMI_TOUR);												//Fais demi-tour s'il recontre un obstacle latéral
 		}
-		if(obstacle_detection(CAPTEUR_IR_LEFT, OBSTACLE_TRIGGER*3)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
-			small_turn_right();
+		if(obstacle_detection(CAPTEUR_IR_LEFT, HIGH_OBSTACLE_TRIGGER)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
+			turn_right_until(SMALL_TURN);
 		}
-		if(obstacle_detection(CAPTEUR_IR_RIGHT, OBSTACLE_TRIGGER*3)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
-			small_turn_left();
+		if(obstacle_detection(CAPTEUR_IR_RIGHT, HIGH_OBSTACLE_TRIGGER)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
+			turn_left_until(SMALL_TURN);
 		}
 	}
 	right_motor_set_pos(RESET_VALUE);
@@ -209,42 +210,42 @@ void dodge_right(void) {
 	}
 	stop_motors();
 	right_motor_set_pos(RESET_VALUE);
-	quart_de_tour_left();
+	//quart_de_tour_left();
 }
 
 void dodge_frontleft(void) {
-	huitieme_de_tour_left();
+	turn_left_until(HUITIEME_TOUR);
 	go_forward();
 	while(obstacle_detection(CAPTEUR_IR_RIGHT, SIDE_OBSTACLE_TRIGGER)) {
 		if(frontObstacleAnalysis()) {
-			demi_tour();												//Fais demi-tour s'il recontre un obstacle latéral
+			turn_left_until(DEMI_TOUR);												//Fais demi-tour s'il recontre un obstacle latéral
 		}
-		if(obstacle_detection(CAPTEUR_IR_RIGHT, OBSTACLE_TRIGGER*3)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
-			small_turn_left();
+		if(obstacle_detection(CAPTEUR_IR_RIGHT, HIGH_OBSTACLE_TRIGGER)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
+			turn_left_until(SMALL_TURN);
 		}
-		if(obstacle_detection(CAPTEUR_IR_LEFT, OBSTACLE_TRIGGER*3)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
-			small_turn_right();
+		if(obstacle_detection(CAPTEUR_IR_LEFT, HIGH_OBSTACLE_TRIGGER)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
+			turn_right_until(SMALL_TURN);
 		}
 	}
 	right_motor_set_pos(RESET_VALUE);
 	while(abs(right_motor_get_pos()) < DODGE_OBSTACLE)  {		//Avance encore un peu pour éviter de toucher le coin de l'obstacle
 	}
 	stop_motors();
-	huitieme_de_tour_right();
+	//huitieme_de_tour_right();
 }
 
 void dodge_frontright(void) {
-	huitieme_de_tour_right();
+	turn_right_until(HUITIEME_TOUR);
 	go_forward();
 	while(obstacle_detection(CAPTEUR_IR_LEFT, SIDE_OBSTACLE_TRIGGER)) {
 		if(frontObstacleAnalysis()) {
-			demi_tour();												//Fais demi-tour s'il recontre un obstacle latéral
+			turn_right_until(DEMI_TOUR);												//Fais demi-tour s'il recontre un obstacle latéral
 		}
-		if(obstacle_detection(CAPTEUR_IR_RIGHT, OBSTACLE_TRIGGER*3)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
-			small_turn_left();
+		if(obstacle_detection(CAPTEUR_IR_RIGHT, HIGH_OBSTACLE_TRIGGER)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
+			turn_left_until(SMALL_TURN);
 		}
-		if(obstacle_detection(CAPTEUR_IR_LEFT, OBSTACLE_TRIGGER*3)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
-			small_turn_right();
+		if(obstacle_detection(CAPTEUR_IR_LEFT, HIGH_OBSTACLE_TRIGGER)) {	//S'écarte s'il s'approche trop de l'obstacle en esquivant
+			turn_right_until(SMALL_TURN);
 		}
 	}
 	right_motor_set_pos(RESET_VALUE);
@@ -252,5 +253,5 @@ void dodge_frontright(void) {
 	}
 	stop_motors();
 	right_motor_set_pos(RESET_VALUE);
-	huitieme_de_tour_left();
+	//huitieme_de_tour_left();
 }
