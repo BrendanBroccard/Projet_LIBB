@@ -32,9 +32,9 @@ typedef enum {							//Les numéros des différents capteurs IR
 #define OBSTACLE_TRIGGER 		50
 #define HIGH_OBSTACLE_TRIGGER	150
 #define SIDE_OBSTACLE_TRIGGER	5
-#define DODGE_OBSTACLE			350
+#define DODGE_OBSTACLE			250
 
-#define TRESHOLD				600		//Le treshold choisi auquel on compare les valeurs d'accélérations mesurées par l'IMU
+#define TRESHOLD				500		//Le treshold choisi auquel on compare les valeurs d'accélérations mesurées par l'IMU
 #define X_AXIS					0
 #define Y_AXIS					1
 #define FILTER_SIZE				50		//Nombre de mesures dont on calcule la moyenne pour obtenir l'accélération mesurée
@@ -45,12 +45,12 @@ typedef enum {							//Les numéros des différents capteurs IR
 #define HUITIEME_TOUR			160		//Nombre de step que prend le robot pour faire un hutième de tour
 
 void init_thread(void);
-void moveTowardsUp(void);
+void move_towards_up(void);
+void obstacle_check(void);
 bool obstacle_detection(sensor_ir_number capteur, int trigger);
-bool frontObstacleAnalysis(void);
-void dodge_right(void);
-void dodge_left(void);
-void dodge_frontright(void);
-void dodge_frontleft(void);
+bool front_obstacle_analysis(void);
+void dodge_sidewall(void);
+void dodge_obstacle_edge(void);
+
 
 #endif /* CONTROLE_H_ */
