@@ -66,6 +66,6 @@ void go_forward(void) {
 }
 
 void stop_motors(void) {
-	left_motor_set_speed(RESET_VALUE);
-	right_motor_set_speed(RESET_VALUE);
+	left_motor_set_speed(OFF);
+	right_motor_set_speed(OFF);
 }

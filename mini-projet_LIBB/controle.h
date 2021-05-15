@@ -28,9 +28,9 @@ typedef enum {							//Les numéros des différents capteurs IR
 	NB_CAPTEURS_IR,
 } sensor_ir_number;
 
-#define OBSTACLE_TRIGGER 		50
-#define HIGH_OBSTACLE_TRIGGER	1000
-#define SIDE_OBSTACLE_TRIGGER	10
+#define OBSTACLE_TRIGGER 		50		//Valeur comparée aux valeurs mesurées par les capteurs de proximité pour déceler la présence d'un obstacle
+#define HIGH_OBSTACLE_TRIGGER	1000	//Valeur de comparaison beaucoup plus grande qui permet simplement d'éviter un choc imminent imprévu
+#define SIDE_OBSTACLE_TRIGGER	10		//Valeur de comparaison plus faible utilisée pour determiner lorsqu'un obstacle a été complètement évité
 
 #define TRESHOLD				500		//Le treshold choisi auquel on compare les valeurs d'accélération mesurées par l'IMU
 #define X_AXIS					0
@@ -41,6 +41,8 @@ typedef enum {							//Les numéros des différents capteurs IR
 #define QUART_TOUR				320		//Nombre de steps que prend le robot pour faire un quart de tour
 #define DEMI_TOUR				640		//Nombre de steps que prend le robot pour faire un demi-tour
 #define HUITIEME_TOUR			160		//Nombre de steps que prend le robot pour faire un huitième de tour
+
+
 
 void init_thread(void);
 void move_towards_up(void);

@@ -49,15 +49,15 @@ int main(void)
     set_led(LED3, ON);
     set_led(LED7, ON);
 
-    serial_start();									//Démarre la communication serial
-    usb_start();									//Démarre la communication USB
-    motors_init();									//Initie les moteurs
-    imu_start();									//Initie l'imu and la communication i2c
-    proximity_start();								//Initie les capteurs IR de proximité
+    serial_start();										//Démarre la communication serial
+    usb_start();										//Démarre la communication USB
+    motors_init();										//Initie les moteurs
+    imu_start();										//Initie l'imu and la communication i2c
+    proximity_start();									//Initie les capteurs IR de proximité
 
-    messagebus_init(&bus, &bus_lock, &bus_condvar);	//Initie le bus de communication
+    messagebus_init(&bus, &bus_lock, &bus_condvar);		//Initie le bus de communication
 
-    init_thread();									//Initie le thread défini dans controle.c
+    init_thread();										//Initie le thread défini dans controle.c
 
     //Boucle infinie du main
     while(1) {

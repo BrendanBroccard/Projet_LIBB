@@ -17,12 +17,14 @@
 #include <deplacement.h>
 #include <controle.h>
 
-static imu_msg_t imu_values;
-static proximity_msg_t prox_values;
-static bool lookingForDirection = true;
-static bool atTheTop = false;
-static bool dodgingRightObstacle = false;
-static bool dodgingLeftObstacle = false;
+
+static imu_msg_t imu_values;														//Tableau qui contient les mesures de l'IMU
+static proximity_msg_t prox_values;													//Tableau qui contient les mesures des capteurs IR
+static bool lookingForDirection = true;												//Booléen qui indique si le robot est en train de chercher la bonne direction
+static bool atTheTop = false;														//Booléen qui indique si le robot est sur un plat
+static bool dodgingRightObstacle = false;											//Booléen qui indique si le robot est en train d'esquiver un obstacle sur sa droite
+static bool dodgingLeftObstacle = false;											//Booléen qui indique si le robot est en train d'esquiver un obstacle sur sa gauche
+
 
 /* Ce thread va utiliser les valeurs mesurées par l'accéléromètre de l'IMU et les capteurs IR pour contrôler le robot */
 static THD_WORKING_AREA(robotControlThd_wa, 2048);
@@ -37,7 +39,7 @@ static THD_FUNCTION(robotControlThd, arg)
     messagebus_topic_t *prox_topic = messagebus_find_topic_blocking(&bus, "/proximity");
     calibrate_ir();
 
-    chThdSleepMilliseconds(1000);													//Laisse une sseconde de marge de stabilisation
+    chThdSleepMilliseconds(1000);													//Laisse une seconde de marge de stabilisation
 
     clear_leds();																	//Eteint les LEDs témoins de l'initialisation
 
@@ -46,9 +48,9 @@ static THD_FUNCTION(robotControlThd, arg)
 
     	if(!dodgingRightObstacle && !dodgingLeftObstacle) {
     		lookingForDirection = true;
-    		while(lookingForDirection) {											//Se focalise uniquement sur l'accéléromètre jusqu'à avoir la bonne direction à emprunter
+    		while(lookingForDirection) {											//Se focalise uniquement sur l'accéléromètre jusqu'à avoir la bonne direction
     			messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
-    			move_towards_up();													//Cherche la direction du sommet de la pente
+    			move_towards_up();													//Se tourne jusqu'à être dans la direction du sommet de la pente
     		}
     	}
 
@@ -74,8 +76,8 @@ void init_thread(void) {															//Est appelée dans le main et initialise 
 
 void move_towards_up(void)  {
 
-	int16_t acc_x = get_acc_filtered(X_AXIS, FILTER_SIZE);
-	int16_t acc_y = get_acc_filtered(Y_AXIS, FILTER_SIZE);
+	int16_t acc_x = get_acc_filtered(X_AXIS, FILTER_SIZE);							//Initialise la valeur moyenne des 50 dernières mesures de l'accéléromètre dans l'axe des X
+	int16_t acc_y = get_acc_filtered(Y_AXIS, FILTER_SIZE);							//Initialise la valeur moyenne des 50 dernières mesures de l'accéléromètre dans l'axe des Y
 
 	if((abs(acc_x) > TRESHOLD) || (abs(acc_y) > TRESHOLD)) {
 		atTheTop = false;
@@ -90,13 +92,13 @@ void move_towards_up(void)  {
 			set_front_led(OFF);
 			go_forward();
 		} else if(acc_y < -TRESHOLD) {
-			turn_right_until(DEMI_TOUR);
+			turn_right(HALF_MAX_SPEED);
 		}
 	} else {
 		atTheTop = true;
+		stop_motors();																//Le robot s'arrête d'une fois qu'il arrivé sur un plat
 		set_body_led(ON);
 		set_front_led(OFF);
-		stop_motors();
 	}
 }
 
@@ -141,9 +143,9 @@ void dodge_obstacle(void) {
 				turn_left_until(DEMI_TOUR);											//Fait demi-tour s'il recontre un obstacle durant l'esquive
 				go_forward();
 			}
-			dodge_sidewall();														//S'écarte s'il s'approche trop de l'obstacle en esquivant
+			dodge_sidewall();														//S'écarte s'il s'approche trop de l'obstacle en l'esquivant
 		} else {
-			wide_turn_right();														//Avance encore un peu pour éviter de toucher le coin de l'obstacle
+			wide_turn_right();														//Prend un virage large pour éviter de toucher le coin de l'obstacle
 			dodgingRightObstacle = false;
 			clear_leds();
 		}
@@ -157,9 +159,9 @@ void dodge_obstacle(void) {
 				turn_right_until(DEMI_TOUR);										//Fait demi-tour s'il recontre un obstacle durant l'esquive
 				go_forward();
 			}
-			dodge_sidewall();														//S'écarte s'il s'approche trop de l'obstacle en esquivant
+			dodge_sidewall();														//S'écarte s'il s'approche trop de l'obstacle en l'esquivant
 		} else {
-			wide_turn_left();														//Avance encore un peu pour éviter de toucher le coin de l'obstacle
+			wide_turn_left();														//Prend un virage large pour éviter de toucher le coin de l'obstacle
 			dodgingLeftObstacle = false;
 			clear_leds();
 		}
