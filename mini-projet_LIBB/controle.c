@@ -9,8 +9,6 @@
 //	controle.c définit le thread principal qui sera utilisé et par conséquent les fonctions qui vont contrôler le robot
 //-------------------------------------------------------------------------------------------------------------------------
 
-//#include "i2c_bus.h"
-#include "motors.h"
 #include "leds.h"
 #include "sensors/imu.h"
 #include "sensors/proximity.h"
@@ -57,6 +55,13 @@ static THD_FUNCTION(robotControlThd, arg)
     	if(!atTheTop) {																//Empêche le robot d'entamer une esquive lorsqu'il est à l'arrêt sur un plat
     		messagebus_topic_wait(prox_topic, &prox_values, sizeof(prox_values));
     		obstacle_check();
+    		while(dodgingRightObstacle || dodgingLeftObstacle) {
+    			chThdSetPriority(NORMALPRIO);										//Diminue la priorité du thread principal pour permettre aux capteurs IR d'être ajournés plus régulièrement
+    			messagebus_topic_wait(prox_topic, &prox_values, sizeof(prox_values));
+    			dodge_obstacle();
+    		}
+			chThdSetPriority(NORMALPRIO+1);
+
     	}
 
     	chThdSleepUntilWindowed(time, time + MS2ST(100));							//Reset à une fréquence de 10 Hz.
@@ -90,6 +95,7 @@ void move_towards_up(void)  {
 	} else {
 		atTheTop = true;
 		set_body_led(ON);
+		set_front_led(OFF);
 		stop_motors();
 	}
 }
@@ -121,8 +127,11 @@ void obstacle_check(void) {
 		} else {
 			dodge_sidewall();														//S'écarte s'il s'approche trop d'un obstacle latéral
 		}
+	}
+}
 
-	} else if(dodgingRightObstacle) {
+void dodge_obstacle(void) {
+	if(dodgingRightObstacle) {
 		if(obstacle_detection(CAPTEUR_IR_RIGHT, SIDE_OBSTACLE_TRIGGER)) {
 			if(front_obstacle_analysis()) {
 				set_led(LED3, OFF);
@@ -134,7 +143,7 @@ void obstacle_check(void) {
 			}
 			dodge_sidewall();														//S'écarte s'il s'approche trop de l'obstacle en esquivant
 		} else {
-			dodge_obstacle_edge();													//Avance encore un peu pour éviter de toucher le coin de l'obstacle
+			wide_turn_right();														//Avance encore un peu pour éviter de toucher le coin de l'obstacle
 			dodgingRightObstacle = false;
 			clear_leds();
 		}
@@ -150,7 +159,7 @@ void obstacle_check(void) {
 			}
 			dodge_sidewall();														//S'écarte s'il s'approche trop de l'obstacle en esquivant
 		} else {
-			dodge_obstacle_edge();													//Avance encore un peu pour éviter de toucher le coin de l'obstacle
+			wide_turn_left();														//Avance encore un peu pour éviter de toucher le coin de l'obstacle
 			dodgingLeftObstacle = false;
 			clear_leds();
 		}
@@ -183,12 +192,4 @@ void dodge_sidewall(void) {
 		turn_right_until(SMALL_TURN);
 		go_forward();
 	}
-}
-
-void dodge_obstacle_edge(void) {
-	go_forward();
-	right_motor_set_pos(RESET_VALUE);
-	while(abs(right_motor_get_pos()) < DODGE_OBSTACLE_EDGE)  {
-	}
-	right_motor_set_pos(RESET_VALUE);
 }
