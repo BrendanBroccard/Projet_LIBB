@@ -169,11 +169,10 @@ void dodge_obstacle(void) {
 }
 
 bool obstacle_detection(sensor_ir_number capteur, int trigger) {
-	bool obs = false;
 	if (get_calibrated_prox(capteur) > trigger) {
-		obs = true;
+		return true;
 	}
-	return obs;
+	return false;
 }
 
 bool front_obstacle_analysis(void) {

@@ -43,13 +43,45 @@ typedef enum {							//Les numéros des différents capteurs IR
 #define HUITIEME_TOUR			160		//Nombre de steps que prend le robot pour faire un huitième de tour
 
 
-
+/*
+ * Cette fonction permet d'initier le thread robotControlThd depuis le main.c
+ */
 void init_thread(void);
+
+/*
+ * Cette fonction fait tourner le robot jusqu'à ce que sa direction pointe vers le sommet de la pente
+ */
 void move_towards_up(void);
+
+/*
+ * Cette fonction utilise les mesures des capteurs IR pour déceler la présence d'un obstacle et le cas échéant, met le robot en état d'esquive
+ */
 void obstacle_check(void);
+
+/*
+ * Cette fonction utilise les mesures des capteurs IR pour permettre au robot d'esquiver un obstacle précédemment détécté
+ */
 void dodge_obstacle(void);
+
+/*
+ * Cette fonction compare la mesure la plus récente d'un capteur IR à une valeur de trigger défini
+ *
+ * Paramètre capteur : Le numéro du capteur dont on souhaite comparer la mesure
+ * Paramètre trigger : La valeur de trigger à laquelle on veut comparer la mesure du capteur IR
+ *
+ * Renvoie : Le booléen true si la mesure du capteur est plus grande que le trigger, le booléen false sinon
+ */
 bool obstacle_detection(sensor_ir_number capteur, int trigger);
+
+/*
+ * Cette fontion analyse l'état des 4 capteurs IR avant pour savoir si un obstacle se trouve face au robot
+ * Renvoie : Le booléen true si au moins un des 4 capteurs IR avant détecte un obstacle, le booléen false sinon
+ */
 bool front_obstacle_analysis(void);
+
+/*
+ * Cette fonction utilise les valeurs mesurées par les capteurs IR latéraux pour permettre au robot de s'écarter légèrement s'il est trop proche d'un obstacle latéral
+ */
 void dodge_sidewall(void);
 
 
