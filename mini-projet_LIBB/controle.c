@@ -24,6 +24,7 @@ static bool lookingForDirection = true;												//Booléen qui indique si le r
 static bool atTheTop = false;														//Booléen qui indique si le robot est sur un plat
 static bool dodgingRightObstacle = false;											//Booléen qui indique si le robot est en train d'esquiver un obstacle sur sa droite
 static bool dodgingLeftObstacle = false;											//Booléen qui indique si le robot est en train d'esquiver un obstacle sur sa gauche
+static bool obstacleDiagonal = false;
 
 
 /* Ce thread va utiliser les valeurs mesurées par l'accéléromètre de l'IMU et les capteurs IR pour contrôler le robot */
@@ -118,11 +119,13 @@ void obstacle_check(void) {
 			go_forward();
 		} else if(obstacle_detection(CAPTEUR_IR_45DEGRIGHT, HIGH_OBSTACLE_TRIGGER)) {
 			dodgingRightObstacle = true;
+			obstacleDiagonal = true;
 			set_led(LED3, ON);
 			turn_left_until(HUITIEME_TOUR);
 			go_forward();
 		} else if(obstacle_detection(CAPTEUR_IR_45DEGLEFT, HIGH_OBSTACLE_TRIGGER)) {
 			dodgingLeftObstacle = true;
+			obstacleDiagonal = true;
 			set_led(LED7, ON);
 			turn_right_until(HUITIEME_TOUR);
 			go_forward();
@@ -145,8 +148,11 @@ void dodge_obstacle(void) {
 			}
 			dodge_sidewall();														//S'écarte s'il s'approche trop de l'obstacle en l'esquivant
 		} else {
-			wide_turn_right();														//Prend un virage large pour éviter de toucher le coin de l'obstacle
+			if(!obstacleDiagonal) {
+				wide_turn_right();														//Prend un virage large pour éviter de toucher le coin de l'obstacle
+			}
 			dodgingRightObstacle = false;
+			obstacleDiagonal = false;
 			clear_leds();
 		}
 	} else if(dodgingLeftObstacle) {
@@ -161,8 +167,11 @@ void dodge_obstacle(void) {
 			}
 			dodge_sidewall();														//S'écarte s'il s'approche trop de l'obstacle en l'esquivant
 		} else {
-			wide_turn_left();														//Prend un virage large pour éviter de toucher le coin de l'obstacle
+			if(!obstacleDiagonal) {
+				wide_turn_left();														//Prend un virage large pour éviter de toucher le coin de l'obstacle
+			}
 			dodgingLeftObstacle = false;
+			obstacleDiagonal = false;
 			clear_leds();
 		}
 	}
