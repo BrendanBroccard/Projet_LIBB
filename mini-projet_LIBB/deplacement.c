@@ -2,23 +2,12 @@
  * deplacement.c
  *
  *  Created on: 4 mai 2021
- *      Author: Brendan
+ *      Author: Brendan and Laetitia
  */
 
-//--------------------------------------------------------------------------------------------------------------------
-//	deplacement.c contient toutes les fonctions particulières permettant le déplacement du robot
-//--------------------------------------------------------------------------------------------------------------------
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-
-#include "ch.h"
-#include "hal.h"
-#include "memory_protection.h"
-#include <usbcfg.h>
-#include <chprintf.h>
+//------------------------------------------------------------------------------------------------------------------------
+//	deplacement.c contient toutes les fonctions spécifiques au déplacement du robot, liées à l'utilisation des moteurs
+//------------------------------------------------------------------------------------------------------------------------
 
 #include "motors.h"
 #include <main.h>

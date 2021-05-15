@@ -2,7 +2,7 @@
  * deplacement.h
  *
  *  Created on: 4 mai 2021
- *      Author: Brendan
+ *      Author: Brendan and Laetitia
  */
 
 #ifndef DEPLACEMENT_H_
@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
 #define MAX_SPEED 				200
+#define HALF_MAX_SPEED			100
 
 void turn_right(int speed);
 void turn_left(int speed);

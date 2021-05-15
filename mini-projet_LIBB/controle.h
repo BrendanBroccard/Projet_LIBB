@@ -2,7 +2,7 @@
  * controle.h
  *
  *  Created on: 4 mai 2021
- *      Author: Brendan
+ *      Author: Brendan and Laetitia
  */
 
 #ifndef CONTROLE_H_
@@ -15,7 +15,6 @@ extern "C" {
 #define RESET_VALUE 			0
 #define ON						1
 #define OFF						0
-#define RGB_MAX					100		//Intensité que l'on souhaite donner aux LED RGB
 
 typedef enum {							//Les numéros des différents capteurs IR
 	CAPTEUR_IR_FRONTRIGHT,
@@ -30,9 +29,9 @@ typedef enum {							//Les numéros des différents capteurs IR
 } sensor_ir_number;
 
 #define OBSTACLE_TRIGGER 		50
-#define HIGH_OBSTACLE_TRIGGER	150
+#define HIGH_OBSTACLE_TRIGGER	1000
 #define SIDE_OBSTACLE_TRIGGER	5
-#define DODGE_OBSTACLE			250
+#define DODGE_OBSTACLE_EDGE		150
 
 #define TRESHOLD				500		//Le treshold choisi auquel on compare les valeurs d'accélérations mesurées par l'IMU
 #define X_AXIS					0
@@ -42,7 +41,7 @@ typedef enum {							//Les numéros des différents capteurs IR
 #define SMALL_TURN				50		//Nombre de step que l'on a défini pour que le robot s'écarte d'une paroi latérale
 #define QUART_TOUR				320		//Nombre de step que prend le robot pour faire un quart de tour
 #define DEMI_TOUR				640		//Nombre de step que prend le robot pour faire un demi-tour
-#define HUITIEME_TOUR			160		//Nombre de step que prend le robot pour faire un hutième de tour
+#define HUITIEME_TOUR			160		//Nombre de step que prend le robot pour faire un huitième de tour
 
 void init_thread(void);
 void move_towards_up(void);

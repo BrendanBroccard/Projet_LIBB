@@ -1,3 +1,8 @@
+/*
+ * main.c
+ *
+ *      Author: Brendan and Laetitia
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,7 +15,6 @@
 #include <main.h>
 #include <chprintf.h>
 
-#include "i2c_bus.h"
 #include "motors.h"
 #include "leds.h"
 #include "sensors/imu.h"

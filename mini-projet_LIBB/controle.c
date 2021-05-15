@@ -2,31 +2,19 @@
  * controle.c
  *
  *  Created on: 4 mai 2021
- *      Author: Brendan
+ *      Author: Brendan and Laetitia
  */
 
-//--------------------------------------------------------------------------------------------------------------------
-//	controle.c définit les thread qui seront utilisés et par conséquent les fonctions qui vont contrôler le robot
-//--------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------------
+//	controle.c définit le thread principal qui sera utilisé et par conséquent les fonctions qui vont contrôler le robot
+//-------------------------------------------------------------------------------------------------------------------------
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-
-#include "ch.h"
-#include "hal.h"
-#include "memory_protection.h"
-#include <usbcfg.h>
-#include <chprintf.h>
-
-#include "i2c_bus.h"
+//#include "i2c_bus.h"
 #include "motors.h"
 #include "leds.h"
 #include "sensors/imu.h"
 #include "sensors/proximity.h"
 #include "msgbus/messagebus.h"
-#include "motors.h"
 #include <main.h>
 #include <deplacement.h>
 #include <controle.h>
@@ -39,8 +27,8 @@ static bool dodgingRightObstacle = false;
 static bool dodgingLeftObstacle = false;
 
 /* Ce thread va utiliser les valeurs mesurées par l'accéléromètre de l'IMU et les capteurs IR pour contrôler le robot */
-static THD_WORKING_AREA(findDirectionThd_wa, 2048);
-static THD_FUNCTION(findDirectionThd, arg)
+static THD_WORKING_AREA(robotControlThd_wa, 2048);
+static THD_FUNCTION(robotControlThd, arg)
 {
     (void) arg;
     chRegSetThreadName(__FUNCTION__);
@@ -75,8 +63,8 @@ static THD_FUNCTION(findDirectionThd, arg)
     }
 }
 
-void init_thread(void) {
-	chThdCreateStatic(findDirectionThd_wa, sizeof(findDirectionThd_wa), NORMALPRIO+1, findDirectionThd, NULL);
+void init_thread(void) {															//Est appelée dans le main et initialise le thread de contrôle du robot
+	chThdCreateStatic(robotControlThd_wa, sizeof(robotControlThd_wa), NORMALPRIO+1, robotControlThd, NULL);
 }
 
 void move_towards_up(void)  {
@@ -84,24 +72,24 @@ void move_towards_up(void)  {
 	int16_t acc_x = get_acc_filtered(X_AXIS, FILTER_SIZE);
 	int16_t acc_y = get_acc_filtered(Y_AXIS, FILTER_SIZE);
 
-	//chprintf((BaseSequentialStream *)&SDU1, "%4d", acc_x);
-
 	if((abs(acc_x) > TRESHOLD) || (abs(acc_y) > TRESHOLD)) {
 		atTheTop = false;
-		set_body_led(0);
+		set_body_led(OFF);
+		set_front_led(ON);
 		if(acc_x > TRESHOLD) {
-			turn_right(MAX_SPEED/2);
+			turn_right(HALF_MAX_SPEED);
 		} else if(acc_x < -TRESHOLD) {
-			turn_left(MAX_SPEED/2);
+			turn_left(HALF_MAX_SPEED);
 		} else if(acc_y > TRESHOLD) {
 			lookingForDirection = false;
+			set_front_led(OFF);
 			go_forward();
 		} else if(acc_y < -TRESHOLD) {
 			turn_right_until(DEMI_TOUR);
 		}
 	} else {
 		atTheTop = true;
-		set_body_led(1);
+		set_body_led(ON);
 		stop_motors();
 	}
 }
@@ -188,7 +176,7 @@ void dodge_sidewall(void) {
 void dodge_obstacle_edge(void) {
 	go_forward();
 	right_motor_set_pos(RESET_VALUE);
-	while(abs(right_motor_get_pos()) < DODGE_OBSTACLE)  {
+	while(abs(right_motor_get_pos()) < DODGE_OBSTACLE_EDGE)  {
 	}
 	stop_motors();
 	right_motor_set_pos(RESET_VALUE);

@@ -1,3 +1,9 @@
+/*
+ * main.h
+ *
+ *      Author: Brendan and Laetitia
+ */
+
 #ifndef MAIN_H
 #define MAIN_H
 
