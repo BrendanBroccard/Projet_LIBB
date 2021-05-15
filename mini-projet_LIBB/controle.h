@@ -31,7 +31,7 @@ typedef enum {							//Les numéros des différents capteurs IR
 #define OBSTACLE_TRIGGER 		50
 #define HIGH_OBSTACLE_TRIGGER	1000
 #define SIDE_OBSTACLE_TRIGGER	5
-#define DODGE_OBSTACLE_EDGE		150
+#define DODGE_OBSTACLE_EDGE		100
 
 #define TRESHOLD				500		//Le treshold choisi auquel on compare les valeurs d'accélérations mesurées par l'IMU
 #define X_AXIS					0

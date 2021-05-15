@@ -125,7 +125,12 @@ void obstacle_check(void) {
 	} else if(dodgingRightObstacle) {
 		if(obstacle_detection(CAPTEUR_IR_RIGHT, SIDE_OBSTACLE_TRIGGER)) {
 			if(front_obstacle_analysis()) {
+				set_led(LED3, OFF);
+				set_led(LED7, ON);
+				dodgingRightObstacle = false;
+				dodgingLeftObstacle = true;
 				turn_left_until(DEMI_TOUR);											//Fait demi-tour s'il recontre un obstacle durant l'esquive
+				go_forward();
 			}
 			dodge_sidewall();														//S'écarte s'il s'approche trop de l'obstacle en esquivant
 		} else {
@@ -136,7 +141,12 @@ void obstacle_check(void) {
 	} else if(dodgingLeftObstacle) {
 		if(obstacle_detection(CAPTEUR_IR_LEFT, SIDE_OBSTACLE_TRIGGER)) {
 			if(front_obstacle_analysis()) {
+				set_led(LED7, OFF);
+				set_led(LED3, ON);
+				dodgingLeftObstacle = false;
+				dodgingRightObstacle = true;
 				turn_right_until(DEMI_TOUR);										//Fait demi-tour s'il recontre un obstacle durant l'esquive
+				go_forward();
 			}
 			dodge_sidewall();														//S'écarte s'il s'approche trop de l'obstacle en esquivant
 		} else {
@@ -167,9 +177,11 @@ bool front_obstacle_analysis(void) {
 void dodge_sidewall(void) {
 	if(obstacle_detection(CAPTEUR_IR_RIGHT, HIGH_OBSTACLE_TRIGGER)) {
 		turn_left_until(SMALL_TURN);
+		go_forward();
 	}
 	if(obstacle_detection(CAPTEUR_IR_LEFT, HIGH_OBSTACLE_TRIGGER)) {
 		turn_right_until(SMALL_TURN);
+		go_forward();
 	}
 }
 
@@ -178,6 +190,5 @@ void dodge_obstacle_edge(void) {
 	right_motor_set_pos(RESET_VALUE);
 	while(abs(right_motor_get_pos()) < DODGE_OBSTACLE_EDGE)  {
 	}
-	stop_motors();
 	right_motor_set_pos(RESET_VALUE);
 }
