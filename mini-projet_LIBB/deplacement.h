@@ -12,10 +12,10 @@
 extern "C" {
 #endif
 
-#define MAX_SPEED 				200		//Vitesse que nous avons déterminé bonne pour le déplacement général de notre robot
-#define HALF_MAX_SPEED			100
-#define QUARTER_MAX_SPEED		50
-#define WIDE_TURN				200		//Nombre de steps pour faire un virage large de 90 degrés dans notre utilisation précise
+#define MAX_SPEED 				200		//[step/s] Vitesse que nous avons déterminé bonne pour le déplacement général de notre robot
+#define HALF_MAX_SPEED			100		//[step/s]
+#define QUARTER_MAX_SPEED		50		//[step/s]
+#define WIDE_TURN				180		//Nombre de steps pour faire un virage large de 90 degrés dans notre utilisation précise
 
 
 /*

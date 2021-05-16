@@ -194,11 +194,11 @@ bool front_obstacle_analysis(void) {
 }
 
 void dodge_sidewall(void) {
-	if(obstacle_detection(CAPTEUR_IR_RIGHT, HIGH_OBSTACLE_TRIGGER)) {
+	if(obstacle_detection(CAPTEUR_IR_RIGHT, SIDEWALL_TRIGGER)) {
 		turn_left_until(SMALL_TURN);
 		go_forward();
 	}
-	if(obstacle_detection(CAPTEUR_IR_LEFT, HIGH_OBSTACLE_TRIGGER)) {
+	if(obstacle_detection(CAPTEUR_IR_LEFT, SIDEWALL_TRIGGER)) {
 		turn_right_until(SMALL_TURN);
 		go_forward();
 	}

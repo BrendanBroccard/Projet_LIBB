@@ -31,13 +31,14 @@ typedef enum {							//Les numéros des différents capteurs IR
 #define OBSTACLE_TRIGGER 		50		//Valeur comparée aux valeurs mesurées par les capteurs de proximité pour déceler la présence d'un obstacle
 #define HIGH_OBSTACLE_TRIGGER	1000	//Valeur de comparaison beaucoup plus grande qui permet simplement d'éviter un choc imminent imprévu
 #define SIDE_OBSTACLE_TRIGGER	10		//Valeur de comparaison plus faible utilisée pour determiner lorsqu'un obstacle a été complètement évité
+#define SIDEWALL_TRIGGER		500		//Valeur de comparaison plus faible utilisée pour prévenir le robot lorsqu'il s'approche trop d'un obstacle latéral
 
 #define TRESHOLD				500		//Le treshold choisi auquel on compare les valeurs d'accélération mesurées par l'IMU
 #define X_AXIS					0
 #define Y_AXIS					1
 #define FILTER_SIZE				50		//Nombre de mesures dont on calcule la moyenne pour obtenir l'accélération mesurée
 
-#define SMALL_TURN				50		//Nombre de steps que l'on a défini pour que le robot s'écarte d'une paroi latérale
+#define SMALL_TURN				20		//Nombre de steps que l'on a défini pour que le robot s'écarte d'une paroi latérale
 #define QUART_TOUR				320		//Nombre de steps que prend le robot pour faire un quart de tour
 #define DEMI_TOUR				640		//Nombre de steps que prend le robot pour faire un demi-tour
 #define HUITIEME_TOUR			160		//Nombre de steps que prend le robot pour faire un huitième de tour
